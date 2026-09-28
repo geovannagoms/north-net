@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>North.net</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="fundo-decoracao">
+  <span class="deco d1">💿</span>
+  <span class="deco d2">✨</span>
+  <span class="deco d3">📼</span>
+  <span class="deco d4">☎️</span>
+  <span class="deco d5">💌</span>
+  <span class="deco d6">⭐</span>
+  <span class="deco d7">🎀</span>
+  <span class="deco d8">📀</span>
+  <span class="deco d9">💾</span>
+  <span class="deco d10">🌸</span>
+</div>
+<script>
+  if (localStorage.getItem("northnetLogado") !== "true") {
+    window.location.href = "login.html";
+  }
+</script>
+
+  <div class="laptop">
+    <div class="laptop-tela">
+      <div class="laptop-marca">North.net</div>
+
+      <div class="pagina">
+        <div class="player">
+
+          <div class="player-topo">
+            <span class="dot dot-vermelho"></span>
+            <span class="dot dot-amarelo"></span>
+            <span class="dot dot-verde"></span>
+          </div>
+
+          <div class="player-corpo">
+
+            <div class="player-tela player-tela-padrao" id="capaTela">
+             
+  <div class="player-marca">North.net</div>
+  <div class="player-capa-botoes">
+    <button class="player-editar-capa" id="btnEditarCapa">🖌 Trocar capa</button>
+    <button class="player-remover-capa" id="btnRemoverCapa">🗑</button>
+  </div>
+  <input type="file" id="inputCapa" accept="image/*" hidden>
+</div>
+
+            <div class="player-lista">
+              <a href="../feed-social/index.html" class="clipe">
+                <div class="clipe-preview">📸</div>
+                <span class="clipe-nome">Feed</span>
+              </a>
+
+              <span class="clipe clipe-desativado">
+                <div class="clipe-preview">📚</div>
+                <span class="clipe-nome">Estante</span>
+              </span>
+
+             
+
+          </div>
+
+          <div class="player-rodape">
+            <button id="btnSair" class="botao-sair">Sair da conta</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <div class="laptop-base"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

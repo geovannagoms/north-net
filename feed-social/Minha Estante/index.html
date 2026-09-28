@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Estante</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Minha Estante</h1>
+     <p id="contador" class="contador"></p>
+     <input type="text" id="campoTitulo" placeholder="Digite o título do livro">
+    <button id="btnAdicionar">+ Adicionar livro</button>
+  </header>
+
+ <div class="janela">
+
+  <div class="janela-topo">
+    <div class="janela-abas">
+      <div class="aba aba-ativa">Estante 1</div>
+    </div>
+    <div class="janela-controles">
+      <span class="controle">–</span>
+      <span class="controle">×</span>
+    </div>
+  </div>
+
+  <div class="janela-barra">
+    <span class="barra-icone">🔍</span>
+    <span class="barra-texto">Estante 1</span>
+  </div>
+
+  <div class="janela-conteudo" id="estante">
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

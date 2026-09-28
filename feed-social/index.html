@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>north.net</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<script>
+  if (localStorage.getItem("northnetLogado") !== "true") {
+    window.location.href = "../north-net-portal/login.html";
+  }
+</script>
+
+ <header class="topo">
+  <a href="index.html" class="topo-marca">
+    <span class="topo-estrela">✳</span>
+    <div class="topo-textos">
+      <span class="topo-logo">north.net</span>
+      <span class="topo-slogan">your space. your north.</span>
+    </div>
+   </a>
+
+  <div class="topo-direita">
+    <nav class="topo-menu">
+      <a href="index.html">home</a>
+      <a href="#">explore</a>
+      <a href="#">signals (0)</a>
+      <a href="#" id="linkSettings">settings</a>
+      <a href="../north-net-portal/index.html" id="navLogout">logout</a>
+    </nav>
+
+    <div class="topo-busca">
+      <input type="text" class="topo-busca-input" placeholder="search north.net...">
+      <button class="topo-busca-btn">go!</button>
+    </div>
+  </div>
+</header>
+
+  <div class="pagina-corpo">
+
+    <aside class="sidebar-esquerda">
+
+      <div class="caixa-destaque">
+        <span class="caixa-destaque-estrela">✳</span>
+        NORTH<br>is<br>yours
+      </div>
+
+      <div class="caixa">
+        <div class="caixa-topo"><span class="caixa-icone">✳</span> quick north</div>
+       <ul class="menu-rapido">
+  <li><a href="#" id="qnExplore">🧭 explore</a></li>
+  <li><a href="#" id="qnSignals">🔔 signals</a></li>
+  <li><a href="#" id="qnFriends">👥 friends</a></li>
+  <li><a href="#" id="qnFavorites">⭐ favorites</a></li>
+  <li><a href="#" id="qnGroups">👪 groups</a></li>
+  <li><a href="#" id="qnNorthFm">🎵 north.fm</a></li>
+</ul>
+
+</div> <!-- fecha quick north -->
+
+      <div class="caixa">
+        <div class="caixa-topo"><span class="caixa-icone">✳</span> who's online?</div>
+        <ul class="lista-amigos">
+          <li>
+            <span class="amigo-avatar"></span>
+            <span class="amigo-nome">.montevideo</span>
+            <span class="amigo-status status-online">online</span>
+          </li>
+          <li>
+            <span class="amigo-avatar"></span>
+            <span class="amigo-nome">.sabrina</span>
+            <span class="amigo-status status-online">online</span>
+          </li>
+          <li>
+            <span class="amigo-avatar"></span>
+            <span class="amigo-nome">.nik</span>
+            <span class="amigo-status status-away">away</span>
+          </li>
+          <li>
+            <span class="amigo-avatar"></span>
+            <span class="amigo-nome">.manu</span>
+            <span class="amigo-status status-offline">offline</span>
+          </li>
+        </ul>
+        <a href="#" class="ver-todos" id="linkViewAllOnline">view all »</a>
+      </div>
+
+      <div class="caixa">
+        <div class="caixa-topo"><span class="caixa-icone">✳</span> north.fm</div>
+        <div class="player-musica">
+          <strong>BLUE</strong>
+          <span>billie eilish</span>
+          <div class="barra-progresso"><div class="barra-preenchida"></div></div>
+          <div class="controles-musica">
+            <span>◀◀</span><span>▶</span><span>▶▶</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="caixa">
+        <div class="caixa-topo">
+          <span><span class="caixa-icone">✳</span> memories</span>
+          <span class="add-icone" id="btnAddMemoria">+</span>
+        </div>
+        <div class="memoria-foto" id="memoriaFotoPrincipal"></div>
+        <div class="memoria-legenda">
+          <span id="memoriaTextoPrincipal">nenhuma memória ainda.</span>
+          <a href="#" id="linkViewAllMemorias">view all</a>
+        </div>
+      </div>
+
+    </aside>
+
+    <main class="coluna-centro">
+
+      <div class="perfil-card">
+        <div class="perfil-foto" id="perfilFotoNorth"></div>
+
+        <div class="perfil-info">
+          <h1 class="perfil-nome">.<span id="perfilNomeNorth">gomes</span> <span class="estrela-nome">✳</span></h1>
+          <p class="perfil-citacao" id="perfilCitacao">"escrevo pra não desaparecer inteira."</p>
+        </div>
+
+        <button class="btn-editar" id="btnEditarPerfil">✎ edit my profile</button>
+      </div>
+
+      <div class="mood-box">
+        <span class="mood-label">mood:</span>
+        <div class="mood-conteudo">
+          <span id="moodTexto">pensativa.</span>
+          <span class="mood-emoji">😐</span>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-valor" id="statNorths">0</span>
+          <span class="stat-label">norths</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-valor" id="statFriends">0</span>
+          <span class="stat-label">friends</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-valor" id="statFavorites">0</span>
+          <span class="stat-label">favorites</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-valor" id="statGroups">0</span>
+          <span class="stat-label">groups</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-valor" id="statPhotos">0</span>
+          <span class="stat-label">photos</span>
+        </div>
+      </div>
+
+      <div class="linha-dupla">
+
+        <div class="caixa caixa-flex caixa-about">
+  <div class="caixa-topo">
+    <span><span class="caixa-icone">✳</span> about me</span>
+    <button type="button" id="btnAdicionarAbout" class="about-adicionar">
+      + bloco
+    </button>
+  </div>
+
+  <p class="about-texto" id="aboutTexto"></p>
+  <div id="aboutBlocos" class="about-blocos"></div>
+</div>
+
+        <div class="coluna-lateral-direita-central">
+
+          <div class="caixa">
+            <div class="caixa-topo"><span class="caixa-icone">✳</span> my top friends</div>
+            <div class="amigos-grid">
+              <div class="amigo-card"><div class="amigo-foto"></div><span>.clara</span></div>
+              <div class="amigo-card"><div class="amigo-foto"></div><span>.gui</span></div>
+              <div class="amigo-card"><div class="amigo-foto"></div><span>.isa</span></div>
+              <div class="amigo-card"><div class="amigo-foto"></div><span>.luan</span></div>
+            </div>
+            <a href="#" class="ver-todos ver-todos-block" id="linkViewAllFriends">view all friends »</a>
+          </div>
+
+         <div class="caixa caixa-flex">
+  <div class="caixa-topo"><span class="caixa-icone">✳</span> my icons</div>
+  <div class="icones-grid" id="iconesGrid">
+    <span class="icone-item" data-index="0">⭐</span>
+    <span class="icone-item" data-index="1">📼</span>
+    <span class="icone-item" data-index="2">👟</span>
+    <span class="icone-item" data-index="3">💗</span>
+  </div>
+  <p class="icones-legenda">this is your vibe.</p>
+</div>
+
+        </div>
+
+      </div>
+
+     <div class="caixa">
+  <div class="caixa-topo caixa-topo-norths">
+    <span><span class="caixa-icone">✳</span> norths <a href="#" id="linkViewAllNorths" class="link-claro">(view all)</a></span>
+    <span class="norths-links"><a href="#">norths</a> | <a href="#">lines</a> | <a href="#">replies</a></span>
+  </div>
+
+  <div class="north-compositor">
+    <textarea id="campoNorth" placeholder="o que você está pensando hoje?" maxlength="280" rows="2"></textarea>
+    <img id="previewNorth" class="preview-foto-perfil">
+    <div class="north-compositor-rodape">
+      <label class="label-arquivo-north" for="campoImagemNorth">📷 foto</label>
+      <input type="file" id="campoImagemNorth" accept="image/*" hidden>
+      <button id="btnPublicarNorth">publicar</button>
+    </div>
+  </div>
+
+  <div class="norths-lista" id="northsLista">
+    <!-- posts entram aqui via JavaScript -->
+  </div>
+</div>
+
+    </main>
+
+    <aside class="sidebar-direita">
+
+      <div class="caixa">
+        <div class="caixa-topo"><span class="caixa-icone">✳</span> my playlist</div>
+        <ul class="playlist-lista">
+          <li>the killers - mr. brightside</li>
+          <li>coldplay - yellow</li>
+          <li>linkin park - somewhere i belong</li>
+          <li>the script - the man who can't</li>
+          <li>simple plan - untitled</li>
+          <li>fall out boy - dance, dance</li>
+        </ul>
+        <a href="#" class="ver-todos ver-todos-block">open playlist</a>
+      </div>
+
+      <div class="caixa">
+        <div class="caixa-topo">
+          <span><span class="caixa-icone">✳</span> my groups</span>
+          <span class="add-icone" id="btnAddGrupo">+</span>
+        </div>
+        <ul class="grupos-lista" id="listaGruposResumo"></ul>
+        <a href="#" class="ver-todos ver-todos-block" id="linkViewAllGrupos">view all groups »</a>
+      </div>
+
+    </aside>
+
+  </div>
+
+ <div class="guestbook">
+  <div class="caixa-topo caixa-topo-guestbook">
+    <span><span class="caixa-icone">✳</span> my guestbook</span>
+    <span><a href="#" id="linkViewAllGuestbook" class="link-claro">view all</a> | <a href="#" id="linkSignGuestbook" class="link-claro">sign guestbook</a></span>
+  </div>
+  <div class="guestbook-grid" id="guestbookGridResumo"></div>
+</div>
+
+  <!-- view: todas as memories -->
+  <div class="view-pagina" id="viewMemorias">
+    <div class="view-topo">
+      <a href="#" id="voltarDeMemorias" class="voltar-link">‹ voltar</a>
+      <h2>todas as memories</h2>
+    </div>
+    <div class="view-grid" id="gridTodasMemorias"></div>
+  </div>
+
+  <!-- view: todos os groups -->
+  <div class="view-pagina" id="viewGrupos">
+    <div class="view-topo">
+      <a href="#" id="voltarDeGrupos" class="voltar-link">‹ voltar</a>
+      <h2>todos os groups</h2>
+    </div>
+    <div class="view-lista-grupos" id="listaTodosGrupos"></div>
+  </div>
+
+  <!-- view: página individual do grupo -->
+<div class="view-pagina" id="viewGrupoDetalhe">
+  <div class="view-topo">
+    <a href="#" id="voltarDeGrupoDetalhe" class="voltar-link">
+      ‹ voltar aos groups
+    </a>
+  </div>
+
+  <div class="grupo-detalhe-layout">
+
+    <!-- coluna esquerda -->
+    <aside class="caixa grupo-detalhe-lateral">
+      <div
+        id="grupoDetalheImagem"
+        class="grupo-detalhe-imagem"
+        role="img"
+        aria-label="imagem do grupo"
+      >✳</div>
+
+      <div class="grupo-detalhe-identidade">
+        <h2 id="grupoLateralNome"></h2>
+        <em id="grupoLateralMembros"></em>
+      </div>
+
+      <div class="grupo-detalhe-secao">
+        <button type="button" id="btnVerMembrosGrupo" class="grupo-link">
+          membros
+        </button>
+      </div>
+
+      <div class="grupo-detalhe-secao">
+        <strong>ações</strong>
+        <button type="button" id="btnEditarGrupoDetalhe" class="grupo-link">
+          editar grupo
+        </button>
+        <button type="button" id="btnEntrarChatGrupo" class="grupo-link">
+          entrar no chat
+          </button>
+      </div>
+
+      <button type="button" class="grupo-participar" data-participar-grupo>
+        + participar do grupo
+      </button>
+    </aside>
+
+    <!-- quadro principal -->
+    <section class="caixa grupo-detalhe-principal">
+      <div class="grupo-detalhe-cabecalho">
+        <h2 id="grupoDetalheNome"></h2>
+
+        <button type="button" class="grupo-participar" data-participar-grupo>
+          + participar do grupo
+        </button>
+      </div>
+
+      <dl class="grupo-metadados">
+        <div>
+          <dt>idioma:</dt>
+          <dd id="grupoDetalheIdioma"></dd>
+        </div>
+        <div>
+          <dt>criada em:</dt>
+          <dd id="grupoDetalheData"></dd>
+        </div>
+        <div>
+          <dt>categoria:</dt>
+          <dd id="grupoDetalheCategoria"></dd>
+        </div>
+        <div>
+          <dt>local:</dt>
+          <dd id="grupoDetalheLocal"></dd>
+        </div>
+        <div>
+          <dt>proprietário:</dt>
+          <dd id="grupoDetalheProprietario"></dd>
+        </div>
+      </dl>
+
+      <div class="grupo-painel">
+        <div class="grupo-painel-topo">
+          <h3>painel do grupo</h3>
+
+          <button
+            type="button"
+            id="btnAdicionarBlocoGrupo"
+            class="grupo-painel-botao"
+            hidden
+          >+ adicionar bloco</button>
+        </div>
+
+        <p id="grupoDetalheBio" class="grupo-painel-intro"></p>
+        <div id="grupoPainelBlocos" class="grupo-painel-blocos"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- view: membros do grupo -->
+<div class="view-pagina" id="viewGrupoMembros">
+  <div class="view-topo">
+    <a href="#" id="voltarDeGrupoMembros" class="voltar-link">
+      ‹ voltar ao grupo
+    </a>
+    <h2>membros</h2>
+  </div>
+
+  <div class="caixa grupo-membros-lista" id="listaMembrosGrupo"></div>
+</div>
+
+<!-- view: chat do grupo -->
+<div class="view-pagina" id="viewGrupoChat">
+  <div class="chat-grupo">
+    <header class="chat-topo">
+      <button type="button" id="chatVoltar" class="chat-voltar">
+        ‹ back
+      </button>
+
+      <h2 id="chatNomeGrupo"></h2>
+
+      <button
+        type="button"
+        id="chatVerMembros"
+        class="chat-membros-botao"
+        aria-label="ver membros do chat"
+        title="ver membros"
+      >👥</button>
+    </header>
+
+    <div class="chat-conversa">
+      <p>a conversa do grupo começa aqui ✳</p>
+    </div>
+  </div>
+</div>
+
+  <!-- view: todos os friends -->
+  <div class="view-pagina" id="viewFriends">
+    <div class="view-topo">
+      <a href="#" class="voltar-link voltar-friends">‹ voltar</a>
+      <h2>todos os friends</h2>
+    </div>
+    <div class="view-lista-friends" id="listaTodosFriends"></div>
+  </div>
+
+  <!-- modal: editar perfil -->
+  <!-- modal: editar perfil -->
+<div class="overlay" id="overlayEditar">
+  <div class="modal-editar">
+    <h3>editar perfil</h3>
+
+    <label>foto de perfil</label>
+    <input type="file" id="inputFotoPerfil" accept="image/*">
+
+    <div id="previewFotoPerfil" class="preview-avatar-perfil"></div>
+
+    <button type="button" id="btnRemoverFotoPerfil" class="btn-remover-foto">
+      remover foto
+    </button>
+
+    <label>nome de usuário</label>
+    <input type="text" id="inputNome" placeholder="seu nome">
+
+    <label>citação (frase curta)</label>
+    <input type="text" id="inputCitacao" placeholder="sua frase aqui">
+
+    <label>about me</label>
+    <textarea
+      id="inputAboutMe"
+      rows="4"
+      placeholder="fale mais sobre você"
+    ></textarea>
+
+    <label>mood</label>
+    <input type="text" id="inputMood" placeholder="como você está?">
+
+    <div class="modal-botoes">
+      <button type="button" id="btnCancelarEdicao">cancelar</button>
+      <button type="button" id="btnSalvarEdicao">salvar</button>
+    </div>
+  </div>
+</div>
+
+  <!-- modal: imagem ou link no about me -->
+<div class="overlay" id="overlayAboutBloco">
+  <div class="modal-editar modal-grupo">
+    <h3 id="tituloAboutBloco">adicionar ao about me</h3>
+
+    <label for="tipoAboutBloco">tipo de bloco</label>
+    <select id="tipoAboutBloco">
+      <option value="imagem">imagem</option>
+      <option value="link">link</option>
+    </select>
+
+    <div id="camposAboutImagem">
+      <label for="inputAboutImagem">imagem (até 1 MB)</label>
+      <input type="file" id="inputAboutImagem" accept="image/*">
+
+      <img
+        id="previewAboutImagem"
+        class="preview-about-imagem"
+        alt="prévia da imagem"
+        hidden
+      >
+
+      <label for="inputAboutLegenda">legenda (opcional)</label>
+      <input type="text" id="inputAboutLegenda" maxlength="120">
+    </div>
+
+    <div id="camposAboutLink" hidden>
+      <label for="inputAboutTitulo">título do link</label>
+      <input type="text" id="inputAboutTitulo" maxlength="120">
+
+      <label for="inputAboutURL">endereço do link</label>
+      <input
+        type="url"
+        id="inputAboutURL"
+        placeholder="https://exemplo.com"
+      >
+    </div>
+
+    <div class="modal-botoes">
+      <button type="button" id="btnCancelarAboutBloco">cancelar</button>
+      <button type="button" id="btnSalvarAboutBloco">salvar bloco</button>
+    </div>
+  </div>
+</div>
+
+  <!-- modal: escolher ícone -->
+  <div class="overlay" id="overlayIcones">
+    <div class="modal-editar modal-icones">
+      <h3>escolha um ícone</h3>
+      <div class="icones-opcoes" id="iconesOpcoes"></div>
+      <div class="modal-botoes">
+        <button id="btnCancelarIcone">cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal: nova memory -->
+  <div class="overlay" id="overlayMemoria">
+    <div class="modal-editar">
+      <h3>nova memory</h3>
+      <label>foto</label>
+      <input type="file" id="inputFotoMemoria" accept="image/*">
+      <img id="previewMemoria" class="preview-foto-perfil">
+      <label>legenda</label>
+      <input type="text" id="inputLegendaMemoria" placeholder="ex: summer 2026.">
+      <div class="modal-botoes">
+        <button id="btnCancelarMemoria">cancelar</button>
+        <button id="btnSalvarMemoria">salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal: novo grupo -->
+<div class="overlay" id="overlayGrupo">
+  <div class="modal-editar modal-grupo">
+    <h3 id="tituloGrupo">criar novo grupo</h3>
+
+    <!-- imagem -->
+    <label>imagem do grupo</label>
+    <input
+      type="file"
+      id="inputImagemGrupo"
+      accept="image/*"
+    >
+
+    <img
+      id="previewImagemGrupo"
+      class="preview-grupo"
+      alt="preview da imagem do grupo"
+    >
+
+    <!-- nome -->
+    <label>nome do grupo</label>
+    <input
+      type="text"
+      id="inputNomeGrupo"
+      placeholder="ex: poetas do norte"
+      maxlength="60"
+    >
+
+    <!-- bio -->
+    <label>bio / descrição</label>
+    <textarea
+      id="inputBioGrupo"
+      rows="4"
+      maxlength="500"
+      placeholder="conte um pouco sobre esse grupo..."
+    ></textarea>
+
+    <!-- idioma -->
+    <label>idioma</label>
+    <select id="inputIdiomaGrupo">
+      <option value="Português">Português</option>
+      <option value="English">English</option>
+      <option value="Español">Español</option>
+      <option value="Français">Français</option>
+      <option value="Italiano">Italiano</option>
+      <option value="Outro">Outro</option>
+    </select>
+
+    <!-- categoria -->
+    <label>categoria</label>
+    <select id="inputCategoriaGrupo">
+      <option value="">selecione uma categoria</option>
+      <option value="Música">Música</option>
+      <option value="Literatura">Literatura</option>
+      <option value="Cinema e TV">Cinema e TV</option>
+      <option value="Fotografia">Fotografia</option>
+      <option value="Arte">Arte</option>
+      <option value="Games">Games</option>
+      <option value="Tecnologia">Tecnologia</option>
+      <option value="Estudos">Estudos</option>
+      <option value="Lifestyle">Lifestyle</option>
+      <option value="Fandom">Fandom</option>
+      <option value="Outros">Outros</option>
+    </select>
+
+    <!-- local -->
+    <label>local</label>
+    <input
+      type="text"
+      id="inputLocalGrupo"
+      placeholder="ex: Brasil"
+      maxlength="80"
+    >
+
+    <div class="modal-botoes">
+      <button id="btnCancelarGrupo">cancelar</button>
+      <button id="btnSalvarGrupo">criar grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal: bloco do painel -->
+<div class="overlay" id="overlayBlocoGrupo">
+  <div class="modal-editar modal-grupo">
+    <h3 id="tituloBlocoGrupo">adicionar bloco</h3>
+
+    <label for="tipoBlocoGrupo">tipo de bloco</label>
+    <select id="tipoBlocoGrupo">
+      <option value="texto">texto</option>
+      <option value="imagem">imagem</option>
+      <option value="link">link</option>
+    </select>
+
+    <div id="camposTextoBloco">
+      <label for="textoBlocoGrupo">texto</label>
+      <textarea
+        id="textoBlocoGrupo"
+        rows="5"
+        maxlength="2000"
+        placeholder="escreva aqui..."
+      ></textarea>
+    </div>
+
+    <div id="camposImagemBloco" hidden>
+      <label for="imagemBlocoGrupo">imagem</label>
+      <input type="file" id="imagemBlocoGrupo" accept="image/*">
+
+      <img
+        id="previewBlocoGrupo"
+        class="preview-bloco-grupo"
+        alt="prévia da imagem"
+        hidden
+      >
+
+      <label for="legendaBlocoGrupo">legenda (opcional)</label>
+      <input
+        type="text"
+        id="legendaBlocoGrupo"
+        maxlength="120"
+        placeholder="legenda da imagem"
+      >
+    </div>
+
+    <div id="camposLinkBloco" hidden>
+      <label for="tituloLinkBloco">título do link</label>
+      <input
+        type="text"
+        id="tituloLinkBloco"
+        maxlength="120"
+        placeholder="ex: leituras do mês"
+      >
+
+      <label for="urlLinkBloco">endereço (https://...)</label>
+      <input
+        type="url"
+        id="urlLinkBloco"
+        placeholder="https://exemplo.com"
+      >
+    </div>
+
+    <div class="modal-botoes">
+      <button type="button" id="btnCancelarBlocoGrupo">cancelar</button>
+      <button type="button" id="btnSalvarBlocoGrupo">salvar bloco</button>
+    </div>
+  </div>
+</div>
+<div class="view-pagina" id="viewNorths">
+  <div class="view-topo">
+    <a href="#" id="voltarDeNorths" class="voltar-link">‹ voltar</a>
+    <h2>todos os norths</h2>
+  </div>
+  <div class="caixa">
+    <div class="norths-lista" id="northsListaCompleta"></div>
+  </div>
+</div>
+<div class="view-pagina" id="viewGuestbook">
+  <div class="view-topo">
+    <a href="#" id="voltarDeGuestbook" class="voltar-link">‹ voltar</a>
+    <h2>guestbook completo</h2>
+  </div>
+  <div class="guestbook-grid" id="guestbookGridCompleto"></div>
+</div>
+
+<div class="overlay" id="overlaySign">
+  <div class="modal-editar">
+    <h3>sign guestbook</h3>
+    <label>seu nome (fictício, pra teste)</label>
+    <input type="text" id="inputNomeSign" placeholder="ex: .clara">
+    <label>recado</label>
+    <textarea id="inputTextoSign" rows="3" placeholder="deixe um recado"></textarea>
+    <div class="modal-botoes">
+      <button id="btnCancelarSign">cancelar</button>
+      <button id="btnSalvarSign">assinar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayResponder">
+  <div class="modal-editar">
+    <h3>responder</h3>
+    <textarea id="inputResposta" rows="3" placeholder="sua resposta"></textarea>
+    <div class="modal-botoes">
+      <button id="btnCancelarResposta">cancelar</button>
+      <button id="btnSalvarResposta">responder</button>
+    </div>
+  </div>
+</div>
+<div class="view-pagina" id="viewSettings">
+  <div class="view-topo">
+    <a href="#" id="voltarDeSettings" class="voltar-link">‹ voltar</a>
+    <h2>settings</h2>
+  </div>
+
+  <div class="caixa settings-caixa">
+    <div class="caixa-topo"><span class="caixa-icone">✳</span> conta</div>
+    <div class="settings-linha">
+      <label>trocar senha</label>
+      <input type="password" id="inputNovaSenha" placeholder="nova senha">
+      <button id="btnTrocarSenha">salvar</button>
+    </div>
+  </div>
+
+  <div class="caixa settings-caixa">
+    <div class="caixa-topo"><span class="caixa-icone">✳</span> personalização</div>
+
+    <div class="settings-linha settings-toggle">
+      <label>modo escuro</label>
+      <input type="checkbox" id="checkModoEscuro">
+    </div>
+
+    <div class="settings-linha settings-bloco">
+      <label>cor do site</label>
+      <div class="paleta-familias" id="paletaFamilias"></div>
+      <div class="paleta-tons" id="paletaTons"></div>
+    </div>
+
+    <div class="settings-linha settings-bloco">
+      <label>capa do header (portal)</label>
+      <input type="file" id="inputHeaderImagem" accept="image/*">
+      <div class="header-cor-opcoes" id="headerCorOpcoes"></div>
+      <button id="btnResetarHeader" class="btn-settings-secundario">usar padrão</button>
+    </div>
+  </div>
+
+  <div class="caixa settings-caixa">
+    <div class="caixa-topo"><span class="caixa-icone">✳</span> preferências</div>
+    <div class="settings-linha settings-toggle">
+      <label>notificações</label>
+      <input type="checkbox" id="checkNotificacoes" checked>
+    </div>
+  </div>
+
+  <div class="caixa settings-caixa">
+    <div class="caixa-topo"><span class="caixa-icone">✳</span> dados</div>
+    <div class="settings-linha">
+      <button id="btnExportarDados" class="btn-settings-secundario">baixar meus dados</button>
+    </div>
+    <div class="settings-linha">
+      <button id="btnApagarConta" class="btn-settings-perigo">apagar minha conta</button>
+    </div>
+  </div>
+
+</div>
+<div class="view-pagina" id="viewEmBreve">
+  <div class="view-topo">
+    <a href="#" id="voltarDeEmBreve" class="voltar-link">‹ voltar</a>
+    <h2 id="tituloEmBreve">em breve</h2>
+  </div>
+  <p class="norths-vazio">essa área ainda está sendo construída. volte em breve!</p>
+</div>
+  <script src="script.js"></script>
+</body>
+</html>
