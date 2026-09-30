@@ -1818,3 +1818,98 @@ body.tema-escuro .grupos-lista strong {
     font-size: 16px;
   }
 }
+
+/* Mensagens de texto do chat */
+.chat-conversa {
+  overflow-y: auto;
+  background: #fff;
+}
+
+.chat-vazio {
+  margin: 30px 12px;
+  color: #69738a;
+  text-align: center;
+  font-size: 13px;
+}
+
+.chat-linha {
+  display: grid;
+  grid-template-columns: 36px minmax(0, auto) 48px;
+  align-items: end;
+  gap: 8px;
+  width: fit-content;
+  max-width: 95%;
+  margin: 0 0 14px 16px;
+}
+
+.chat-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background-color: var(--cor-media);
+  background-position: center;
+  background-size: cover;
+  color: #fff;
+  font-size: 15px;
+}
+
+.chat-bolha {
+  min-width: 70px;
+  padding: 9px 12px;
+  border: 1px solid #cad5e8;
+  border-radius: 11px;
+  background: #e8f1ff;
+  color: #28334d;
+  overflow-wrap: anywhere;
+}
+
+.chat-bolha strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.chat-bolha p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.chat-horario {
+  padding-bottom: 3px;
+  color: #69738a;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.chat-formulario {
+  display: flex;
+  gap: 8px;
+  padding: 11px;
+  border-top: 1px solid #d9dfec;
+  background: #f3f5fa;
+}
+
+.chat-formulario input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid #bac5dc;
+  border-radius: 7px;
+  background: #fff;
+  color: #28334d;
+  font: inherit;
+}
+
+.chat-formulario button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--cor-media);
+  color: #fff;
+  cursor: pointer;
+}

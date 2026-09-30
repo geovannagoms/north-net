@@ -1306,6 +1306,7 @@ document.getElementById("voltarDeGrupoMembros").addEventListener("click", functi
 
   if (voltarMembrosAoChat) {
     voltarMembrosAoChat = false;
+    renderMensagensGrupoChat();
     mostrarViewGrupo("viewGrupoChat");
   } else {
     renderGrupoDetalhe();
@@ -1332,6 +1333,108 @@ document.getElementById("chatVoltar").addEventListener("click", function () {
 
 document.getElementById("chatVerMembros").addEventListener("click", function () {
   document.getElementById("btnVerMembrosGrupo").click();
+});
+
+function renderMensagensGrupoChat() {
+  const grupo = obterGrupo(grupoAbertoId);
+  const lista = document.getElementById("chatMensagens");
+  lista.replaceChildren();
+
+  if (!grupo) return;
+
+  const mensagens = Array.isArray(grupo.chatMensagens)
+    ? grupo.chatMensagens
+    : [];
+
+  if (mensagens.length === 0) {
+    const aviso = document.createElement("p");
+    aviso.className = "chat-vazio";
+    aviso.textContent = "a conversa do grupo começa aqui ✳";
+    lista.appendChild(aviso);
+    return;
+  }
+
+  mensagens.forEach(function (mensagem) {
+    const linha = document.createElement("div");
+    linha.className = "chat-linha";
+
+    const avatar = document.createElement("div");
+    avatar.className = "chat-avatar";
+    aplicarAvatarNorth(
+      avatar,
+      mensagem.fotoAutor || "",
+      mensagem.autor || "usuário"
+    );
+
+    const bolha = document.createElement("div");
+    bolha.className = "chat-bolha";
+
+    const autor = document.createElement("strong");
+    autor.textContent = mensagem.autor || ".usuário";
+
+    const texto = document.createElement("p");
+    texto.textContent = mensagem.texto || "";
+
+    bolha.append(autor, texto);
+
+    const horario = document.createElement("time");
+    horario.className = "chat-horario";
+
+    const data = new Date(mensagem.data);
+    if (!Number.isNaN(data.getTime())) {
+      horario.dateTime = mensagem.data;
+      horario.textContent = data.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    linha.append(avatar, bolha, horario);
+    lista.appendChild(linha);
+  });
+
+  lista.scrollTop = lista.scrollHeight;
+}
+
+document.getElementById("chatFormulario").addEventListener("submit", function (evento) {
+  evento.preventDefault();
+
+  const campo = document.getElementById("chatTexto");
+  const texto = campo.value.trim();
+  const grupo = obterGrupo(grupoAbertoId);
+
+  if (!texto || !grupo) return;
+
+  const mensagens = Array.isArray(grupo.chatMensagens)
+    ? grupo.chatMensagens
+    : [];
+
+  const novaMensagem = {
+    autor: usuarioAtualGrupo(),
+    fotoAutor: perfil.foto || "",
+    texto: texto,
+    data: new Date().toISOString()
+  };
+
+  const grupoAtualizado = Object.assign({}, grupo, {
+    chatMensagens: mensagens.concat(novaMensagem)
+  });
+
+  const gruposAtualizados = grupos.map(function (item) {
+    return String(item.id) === String(grupo.id) ? grupoAtualizado : item;
+  });
+
+  try {
+    localStorage.setItem("meusGrupos", JSON.stringify(gruposAtualizados));
+  } catch (erro) {
+    alert("não foi possível salvar a mensagem. Verifique o espaço do navegador.");
+    return;
+  }
+
+  grupos = gruposAtualizados;
+  campo.value = "";
+  renderMensagensGrupoChat();
+  campo.focus();
 });
 
 // Painel do grupo: a bio continua no topo; os demais blocos ficam em grupo.painel.

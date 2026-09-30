@@ -408,11 +408,19 @@
       >👥</button>
     </header>
 
-    <div class="chat-conversa">
-      <p>a conversa do grupo começa aqui ✳</p>
-    </div>
-  </div>
-</div>
+    <div class="chat-conversa" id="chatMensagens" role="log" aria-live="polite"></div>
+
+<form id="chatFormulario" class="chat-formulario">
+  <input
+    id="chatTexto"
+    type="text"
+    maxlength="1000"
+    placeholder="escreva uma mensagem..."
+    aria-label="mensagem para o grupo"
+    autocomplete="off"
+  >
+  <button type="submit">enviar</button>
+</form>
 
   <!-- view: todos os friends -->
   <div class="view-pagina" id="viewFriends">
