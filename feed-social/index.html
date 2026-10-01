@@ -390,37 +390,50 @@
 </div>
 
 <!-- view: chat do grupo -->
+<!-- view: chat do grupo -->
 <div class="view-pagina" id="viewGrupoChat">
   <div class="chat-grupo">
     <header class="chat-topo">
-      <button type="button" id="chatVoltar" class="chat-voltar">
-        ‹ back
-      </button>
-
+      <button type="button" id="chatVoltar" class="chat-voltar">‹ back</button>
       <h2 id="chatNomeGrupo"></h2>
-
-      <button
-        type="button"
-        id="chatVerMembros"
-        class="chat-membros-botao"
-        aria-label="ver membros do chat"
-        title="ver membros"
-      >👥</button>
+      <button type="button" id="chatVerMembros" class="chat-membros-botao"
+        aria-label="ver membros do chat" title="ver membros">👥</button>
     </header>
 
-    <div class="chat-conversa" id="chatMensagens" role="log" aria-live="polite"></div>
+    <div class="chat-conversa" id="chatMensagens" role="log"
+      aria-live="polite" aria-label="mensagens do grupo"></div>
 
-<form id="chatFormulario" class="chat-formulario">
-  <input
-    id="chatTexto"
-    type="text"
-    maxlength="1000"
-    placeholder="escreva uma mensagem..."
-    aria-label="mensagem para o grupo"
-    autocomplete="off"
-  >
-  <button type="submit">enviar</button>
-</form>
+    <form id="chatFormulario" class="chat-formulario">
+      <div id="chatEdicao" class="chat-edicao" hidden>
+        <span>editando mensagem</span>
+        <button type="button" id="chatCancelarEdicao">cancelar</button>
+      </div>
+
+      <div id="chatAnexo" class="chat-anexo" hidden>
+        <img id="chatPreviewFoto" alt="foto selecionada para enviar">
+        <button type="button" id="chatRemoverAnexo">remover foto</button>
+      </div>
+
+      <div class="chat-campo-linha">
+        <button type="button" id="chatCamera" class="chat-icone"
+          aria-label="adicionar foto" title="adicionar foto">📷</button>
+        <input type="file" id="chatFoto"
+          accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+        <textarea id="chatTexto" rows="2" maxlength="1000"
+          placeholder="escreva uma mensagem..." aria-label="mensagem para o grupo"></textarea>
+
+        <button type="button" id="chatEmoji" class="chat-icone"
+          aria-label="escolher emoji" title="escolher emoji"
+          aria-expanded="false" aria-controls="chatEmojis">☺</button>
+        <button type="submit" id="chatEnviar" class="chat-enviar">enviar</button>
+      </div>
+
+      <div id="chatEmojis" class="chat-emojis" role="group"
+        aria-label="emojis para a mensagem" hidden></div>
+    </form>
+  </div>
+</div>
 
   <!-- view: todos os friends -->
   <div class="view-pagina" id="viewFriends">

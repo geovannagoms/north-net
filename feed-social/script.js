@@ -1331,111 +1331,417 @@ document.getElementById("chatVoltar").addEventListener("click", function () {
   mostrarViewGrupo("viewGrupoDetalhe");
 });
 
-document.getElementById("chatVerMembros").addEventListener("click", function () {
-  document.getElementById("btnVerMembrosGrupo").click();
-});
+// Membros e chat do grupo.
+(function () {
+  const el = function (id) { return document.getElementById(id); };
+  const campo = el("chatTexto");
+  const lista = el("chatMensagens");
+  const emojis = ["🙂", "😂", "❤️", "✨", "😭", "🥹", "🔥", "👀", "👍", "💌"];
+  let voltarMembrosAoChat = false;
+  let usuarioChatId = "";
+  let editandoId = null;
+  let fotoPendente = "";
+  let rascunhoAnterior = null;
+  let leituraFoto = 0;
+  let lendoFoto = false;
 
-function renderMensagensGrupoChat() {
-  const grupo = obterGrupo(grupoAbertoId);
-  const lista = document.getElementById("chatMensagens");
-  lista.replaceChildren();
-
-  if (!grupo) return;
-
-  const mensagens = Array.isArray(grupo.chatMensagens)
-    ? grupo.chatMensagens
-    : [];
-
-  if (mensagens.length === 0) {
-    const aviso = document.createElement("p");
-    aviso.className = "chat-vazio";
-    aviso.textContent = "a conversa do grupo começa aqui ✳";
-    lista.appendChild(aviso);
-    return;
+  function mensagensDoGrupo() {
+    const grupo = obterGrupo(grupoAbertoId);
+    return grupo && Array.isArray(grupo.chatMensagens) ? grupo.chatMensagens : [];
   }
 
-  mensagens.forEach(function (mensagem) {
-    const linha = document.createElement("div");
-    linha.className = "chat-linha";
+  function minhaMensagem(mensagem) {
+    return mensagem.autorId
+      ? mensagem.autorId === usuarioChatId
+      : mensagem.autor === usuarioAtualGrupo();
+  }
 
-    const avatar = document.createElement("div");
-    avatar.className = "chat-avatar";
-    aplicarAvatarNorth(
-      avatar,
-      mensagem.fotoAutor || "",
-      mensagem.autor || "usuário"
-    );
-
-    const bolha = document.createElement("div");
-    bolha.className = "chat-bolha";
-
-    const autor = document.createElement("strong");
-    autor.textContent = mensagem.autor || ".usuário";
-
-    const texto = document.createElement("p");
-    texto.textContent = mensagem.texto || "";
-
-    bolha.append(autor, texto);
-
-    const horario = document.createElement("time");
-    horario.className = "chat-horario";
-
-    const data = new Date(mensagem.data);
-    if (!Number.isNaN(data.getTime())) {
-      horario.dateTime = mensagem.data;
-      horario.textContent = data.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+  function gravarMensagens(mensagens) {
+    const grupo = obterGrupo(grupoAbertoId);
+    if (!grupo) return false;
+    const atualizado = Object.assign({}, grupo, { chatMensagens: mensagens });
+    const novosGrupos = grupos.map(function (item) {
+      return String(item.id) === String(grupo.id) ? atualizado : item;
+    });
+    try {
+      localStorage.setItem("meusGrupos", JSON.stringify(novosGrupos));
+    } catch (erro) {
+      alert("não foi possível salvar. O espaço do navegador pode estar cheio; tente uma foto menor.");
+      return false;
     }
-
-    linha.append(avatar, bolha, horario);
-    lista.appendChild(linha);
-  });
-
-  lista.scrollTop = lista.scrollHeight;
-}
-
-document.getElementById("chatFormulario").addEventListener("submit", function (evento) {
-  evento.preventDefault();
-
-  const campo = document.getElementById("chatTexto");
-  const texto = campo.value.trim();
-  const grupo = obterGrupo(grupoAbertoId);
-
-  if (!texto || !grupo) return;
-
-  const mensagens = Array.isArray(grupo.chatMensagens)
-    ? grupo.chatMensagens
-    : [];
-
-  const novaMensagem = {
-    autor: usuarioAtualGrupo(),
-    fotoAutor: perfil.foto || "",
-    texto: texto,
-    data: new Date().toISOString()
-  };
-
-  const grupoAtualizado = Object.assign({}, grupo, {
-    chatMensagens: mensagens.concat(novaMensagem)
-  });
-
-  const gruposAtualizados = grupos.map(function (item) {
-    return String(item.id) === String(grupo.id) ? grupoAtualizado : item;
-  });
-
-  try {
-    localStorage.setItem("meusGrupos", JSON.stringify(gruposAtualizados));
-  } catch (erro) {
-    alert("não foi possível salvar a mensagem. Verifique o espaço do navegador.");
-    return;
+    grupos = novosGrupos;
+    return true;
   }
 
-  grupos = gruposAtualizados;
-  campo.value = "";
-  renderMensagensGrupoChat();
-  campo.focus();
-});
+  function prepararHistorico() {
+    try {
+      usuarioChatId = localStorage.getItem("northChatUsuarioId") || idNovoGrupo();
+      localStorage.setItem("northChatUsuarioId", usuarioChatId);
+    } catch (erro) {
+      alert("não foi possível preparar o chat. Verifique o espaço do navegador.");
+      return false;
+    }
+    let mudou = false;
+    const ids = new Set();
+    const mensagens = mensagensDoGrupo().map(function (mensagem) {
+      const copia = Object.assign({}, mensagem);
+      if (!copia.id || ids.has(String(copia.id))) {
+        copia.id = idNovoGrupo();
+        mudou = true;
+      }
+      ids.add(String(copia.id));
+      // As mensagens antigas usavam apenas o nome do autor.
+      if (!copia.autorId && copia.autor === usuarioAtualGrupo()) {
+        copia.autorId = usuarioChatId;
+        mudou = true;
+      }
+      return copia;
+    });
+    return !mudou || gravarMensagens(mensagens);
+  }
+
+  function fecharEmojis() {
+    el("chatEmojis").hidden = true;
+    el("chatEmoji").setAttribute("aria-expanded", "false");
+  }
+
+  function atualizarCompositor() {
+    el("chatEdicao").hidden = !editandoId;
+    el("chatEnviar").textContent = editandoId ? "salvar" : "enviar";
+    el("chatEnviar").disabled = lendoFoto;
+    el("chatCamera").disabled = !!editandoId || lendoFoto;
+    el("chatAnexo").hidden = !fotoPendente;
+    if (fotoPendente) el("chatPreviewFoto").src = fotoPendente;
+    else el("chatPreviewFoto").removeAttribute("src");
+  }
+
+  function limparCompositor() {
+    leituraFoto++;
+    lendoFoto = false;
+    editandoId = null;
+    fotoPendente = "";
+    rascunhoAnterior = null;
+    campo.value = "";
+    el("chatFoto").value = "";
+    fecharEmojis();
+    atualizarCompositor();
+  }
+
+  function terminarEdicao() {
+    editandoId = null;
+    campo.value = rascunhoAnterior ? rascunhoAnterior.texto : "";
+    fotoPendente = rascunhoAnterior ? rascunhoAnterior.foto : "";
+    rascunhoAnterior = null;
+    fecharEmojis();
+    atualizarCompositor();
+    campo.focus();
+  }
+
+  function editarMensagem(id) {
+    const mensagem = mensagensDoGrupo().find(function (item) { return item.id === id; });
+    if (!mensagem || !minhaMensagem(mensagem)) return;
+    if (!editandoId) rascunhoAnterior = { texto: campo.value, foto: fotoPendente };
+    leituraFoto++;
+    lendoFoto = false;
+    editandoId = id;
+    fotoPendente = "";
+    campo.value = mensagem.texto || "";
+    fecharEmojis();
+    atualizarCompositor();
+    campo.focus();
+    campo.setSelectionRange(campo.value.length, campo.value.length);
+  }
+
+  function apagarMensagem(id) {
+    const mensagem = mensagensDoGrupo().find(function (item) { return item.id === id; });
+    if (!mensagem || !minhaMensagem(mensagem)) return;
+    if (!confirm("apagar esta mensagem?")) return;
+    const novas = mensagensDoGrupo().filter(function (item) { return item.id !== id; });
+    if (!gravarMensagens(novas)) return;
+    if (editandoId === id) terminarEdicao();
+    renderMensagensGrupoChat();
+  }
+
+  function reagirMensagem(id, emoji) {
+    if (!emojis.includes(emoji)) return;
+    const novas = mensagensDoGrupo().map(function (mensagem) {
+      if (mensagem.id !== id) return mensagem;
+      const reacoes = Object.assign({}, mensagem.reacoes || {});
+      const usuarios = Array.isArray(reacoes[emoji]) ? [...new Set(reacoes[emoji])] : [];
+      const atualizados = usuarios.includes(usuarioChatId)
+        ? usuarios.filter(function (usuario) { return usuario !== usuarioChatId; })
+        : usuarios.concat(usuarioChatId);
+      if (atualizados.length) reacoes[emoji] = atualizados;
+      else delete reacoes[emoji];
+      return Object.assign({}, mensagem, { reacoes: reacoes });
+    });
+    if (gravarMensagens(novas)) renderMensagensGrupoChat();
+  }
+
+  function botao(texto, acao, classe) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.textContent = texto;
+    if (classe) item.className = classe;
+    item.addEventListener("click", acao);
+    return item;
+  }
+
+  function renderMensagensGrupoChat(irParaFim) {
+    const posicao = lista.scrollTop;
+    lista.replaceChildren();
+    const mensagens = mensagensDoGrupo();
+    if (!mensagens.length) {
+      const aviso = document.createElement("p");
+      aviso.className = "chat-vazio";
+      aviso.textContent = "a conversa do grupo começa aqui ✳";
+      lista.appendChild(aviso);
+    }
+    mensagens.forEach(function (mensagem) {
+      const linha = document.createElement("article");
+      linha.className = "chat-linha";
+      linha.dataset.mensagemId = mensagem.id;
+      const avatar = document.createElement("div");
+      avatar.className = "chat-avatar";
+      avatar.setAttribute("role", "img");
+      avatar.setAttribute("aria-label", "foto de " + (mensagem.autor || "usuário"));
+      aplicarAvatarNorth(avatar,
+        minhaMensagem(mensagem) ? perfil.foto || "" : mensagem.fotoAutor || "",
+        mensagem.autor || "usuário");
+
+      const corpo = document.createElement("div");
+      corpo.className = "chat-corpo";
+      const bolha = document.createElement("div");
+      bolha.className = "chat-bolha";
+      const autor = document.createElement("strong");
+      autor.textContent = mensagem.autor || ".usuário";
+      bolha.appendChild(autor);
+      if (mensagem.texto) {
+        const texto = document.createElement("p");
+        texto.textContent = mensagem.texto;
+        bolha.appendChild(texto);
+      }
+      if (/^data:image\/(png|jpeg|webp|gif);base64,/.test(mensagem.imagem || "")) {
+        const foto = document.createElement("img");
+        foto.src = mensagem.imagem;
+        foto.alt = "foto enviada por " + (mensagem.autor || "um membro");
+        bolha.appendChild(foto);
+      }
+      if (mensagem.editadaEm) {
+        const aviso = document.createElement("small");
+        aviso.className = "chat-editada";
+        aviso.textContent = "editada";
+        bolha.appendChild(aviso);
+      }
+      corpo.appendChild(bolha);
+
+      const reacoes = document.createElement("div");
+      reacoes.className = "chat-reacoes";
+      emojis.forEach(function (emoji) {
+        const usuarios = mensagem.reacoes && mensagem.reacoes[emoji];
+        if (!Array.isArray(usuarios) || !usuarios.length) return;
+        const reagiu = usuarios.includes(usuarioChatId);
+        const item = botao(emoji + " " + new Set(usuarios).size,
+          function () { reagirMensagem(mensagem.id, emoji); }, "chat-reacao");
+        item.setAttribute("aria-pressed", String(reagiu));
+        item.setAttribute("aria-label", (reagiu ? "retirar" : "adicionar") + " reação " + emoji);
+        reacoes.appendChild(item);
+      });
+      corpo.appendChild(reacoes);
+
+      const acoes = document.createElement("div");
+      acoes.className = "chat-acoes";
+      if (minhaMensagem(mensagem)) {
+        acoes.append(
+          botao("editar", function () { editarMensagem(mensagem.id); }),
+          botao("apagar", function () { apagarMensagem(mensagem.id); })
+        );
+      }
+      const menu = document.createElement("details");
+      menu.className = "chat-reagir";
+      const titulo = document.createElement("summary");
+      titulo.textContent = "reagir";
+      const opcoes = document.createElement("div");
+      opcoes.className = "chat-opcoes-reacao";
+      emojis.forEach(function (emoji) {
+        const item = botao(emoji, function () { reagirMensagem(mensagem.id, emoji); });
+        item.setAttribute("aria-label", "reagir com " + emoji);
+        opcoes.appendChild(item);
+      });
+      menu.append(titulo, opcoes);
+      acoes.appendChild(menu);
+      corpo.appendChild(acoes);
+
+      const horario = document.createElement("time");
+      horario.className = "chat-horario";
+      const data = new Date(mensagem.data);
+      if (!Number.isNaN(data.getTime())) {
+        horario.dateTime = data.toISOString();
+        horario.textContent = data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        horario.title = data.toLocaleString("pt-BR");
+      }
+      linha.append(avatar, corpo, horario);
+      lista.appendChild(linha);
+    });
+    if (irParaFim) requestAnimationFrame(function () { lista.scrollTop = lista.scrollHeight; });
+    else lista.scrollTop = posicao;
+  }
+
+  el("btnEntrarChatGrupo").addEventListener("click", function () {
+    const grupo = obterGrupo(grupoAbertoId);
+    if (!grupo || !prepararHistorico()) return;
+    limparCompositor();
+    voltarMembrosAoChat = false;
+    el("chatNomeGrupo").textContent = grupo.nome;
+    // Exibe a página e renderiza o histórico em toda entrada, inclusive após recarregar.
+    mostrarViewGrupo("viewGrupoChat");
+    renderMensagensGrupoChat(true);
+    campo.focus();
+  });
+
+  el("chatVoltar").addEventListener("click", function () {
+    limparCompositor();
+    voltarMembrosAoChat = false;
+    if (!obterGrupo(grupoAbertoId)) return abrirListaGrupos();
+    renderGrupoDetalhe();
+    mostrarViewGrupo("viewGrupoDetalhe");
+  });
+
+  el("btnVerMembrosGrupo").addEventListener("click", function () {
+    const grupo = obterGrupo(grupoAbertoId);
+    if (!grupo) return;
+    voltarMembrosAoChat = el("viewGrupoChat").classList.contains("show");
+    const membros = el("listaMembrosGrupo");
+    membros.replaceChildren();
+    if (!grupo.membros.length) membros.textContent = "ninguém entrou neste grupo ainda.";
+    grupo.membros.forEach(function (nome) {
+      const item = document.createElement("div");
+      item.className = "grupo-membro";
+      item.textContent = nome;
+      membros.appendChild(item);
+    });
+    mostrarViewGrupo("viewGrupoMembros");
+  });
+
+  el("chatVerMembros").addEventListener("click", function () { el("btnVerMembrosGrupo").click(); });
+
+  el("voltarDeGrupoMembros").addEventListener("click", function (evento) {
+    evento.preventDefault();
+    if (!obterGrupo(grupoAbertoId)) return abrirListaGrupos();
+    if (voltarMembrosAoChat) {
+      voltarMembrosAoChat = false;
+      mostrarViewGrupo("viewGrupoChat");
+      renderMensagensGrupoChat(true);
+    } else {
+      renderGrupoDetalhe();
+      mostrarViewGrupo("viewGrupoDetalhe");
+    }
+  });
+
+  el("chatFormulario").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    if (lendoFoto || !obterGrupo(grupoAbertoId)) return;
+    const texto = campo.value.trim();
+    if (texto.length > campo.maxLength) return;
+    const mensagens = mensagensDoGrupo();
+    if (editandoId) {
+      const original = mensagens.find(function (item) { return item.id === editandoId; });
+      if (!original || !minhaMensagem(original)) return;
+      if (!texto && !original.imagem) return;
+      const novas = mensagens.map(function (item) {
+        return item.id === editandoId
+          ? Object.assign({}, item, { texto: texto, editadaEm: new Date().toISOString() })
+          : item;
+      });
+      if (gravarMensagens(novas)) {
+        terminarEdicao();
+        renderMensagensGrupoChat();
+      }
+      return;
+    }
+    if (!texto && !fotoPendente) return;
+    const nova = {
+      id: idNovoGrupo(), autorId: usuarioChatId,
+      autor: usuarioAtualGrupo(), fotoAutor: perfil.foto || "",
+      texto: texto, imagem: fotoPendente,
+      data: new Date().toISOString(), reacoes: {}
+    };
+    if (gravarMensagens(mensagens.concat(nova))) {
+      campo.value = "";
+      fotoPendente = "";
+      fecharEmojis();
+      atualizarCompositor();
+      renderMensagensGrupoChat(true);
+      campo.focus();
+    }
+  });
+
+  campo.addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter" && !evento.shiftKey && !evento.isComposing) {
+      evento.preventDefault();
+      el("chatFormulario").requestSubmit();
+    }
+  });
+  el("chatCancelarEdicao").addEventListener("click", terminarEdicao);
+
+  el("chatCamera").addEventListener("click", function () { el("chatFoto").click(); });
+  el("chatFoto").addEventListener("change", function (evento) {
+    const arquivo = evento.target.files[0];
+    evento.target.value = "";
+    if (!arquivo || editandoId) return;
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(arquivo.type) || arquivo.size > 1024 * 1024) {
+      alert("escolha uma foto JPG, PNG, WebP ou GIF de até 1 MB.");
+      return;
+    }
+    const idGrupo = grupoAbertoId;
+    const leitura = ++leituraFoto;
+    lendoFoto = true;
+    atualizarCompositor();
+    const leitor = new FileReader();
+    leitor.onload = function () {
+      if (leitura !== leituraFoto || String(idGrupo) !== String(grupoAbertoId)) return;
+      lendoFoto = false;
+      fotoPendente = String(leitor.result);
+      atualizarCompositor();
+      campo.focus();
+    };
+    leitor.onerror = function () {
+      if (leitura !== leituraFoto) return;
+      lendoFoto = false;
+      atualizarCompositor();
+      alert("não foi possível ler a foto.");
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+  el("chatRemoverAnexo").addEventListener("click", function () {
+    fotoPendente = "";
+    atualizarCompositor();
+  });
+
+  emojis.forEach(function (emoji) {
+    const item = botao(emoji, function () {
+      const tamanho = campo.value.length - (campo.selectionEnd - campo.selectionStart) + emoji.length;
+      if (tamanho > campo.maxLength) return;
+      campo.setRangeText(emoji, campo.selectionStart, campo.selectionEnd, "end");
+      fecharEmojis();
+      campo.focus();
+    });
+    item.setAttribute("aria-label", "inserir " + emoji);
+    el("chatEmojis").appendChild(item);
+  });
+  el("chatEmoji").addEventListener("click", function () {
+    el("chatEmojis").hidden = !el("chatEmojis").hidden;
+    el("chatEmoji").setAttribute("aria-expanded", String(!el("chatEmojis").hidden));
+  });
+  el("viewGrupoChat").addEventListener("click", function (evento) {
+    if (!el("chatEmoji").contains(evento.target) && !el("chatEmojis").contains(evento.target)) fecharEmojis();
+  });
+  el("viewGrupoChat").addEventListener("keydown", function (evento) {
+    if (evento.key !== "Escape") return;
+    if (!el("chatEmojis").hidden) fecharEmojis();
+    else if (editandoId) terminarEdicao();
+  });
+})();
 
 // Painel do grupo: a bio continua no topo; os demais blocos ficam em grupo.painel.
 let indiceBlocoEditando = null;
