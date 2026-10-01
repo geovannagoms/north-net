@@ -43,7 +43,7 @@ function renderPerfil() {
   renderAboutBlocos();
 
   document.getElementById("moodTexto").textContent = perfil.mood;
-
+  document.getElementById("btnMoodEmoji").textContent = perfil.moodEmoji || "😐";
   aplicarAvatarNorth(
     document.getElementById("perfilFotoNorth"),
     perfil.foto,
@@ -134,9 +134,9 @@ topo.append(autor, dataPost);
       }
     });
 
-    acoes.appendChild(curtirEl);
-    acoes.appendChild(apagarEl);
-    corpo.appendChild(acoes);
+     acoes.appendChild(curtirEl);
+acoes.appendChild(apagarEl);
+corpo.appendChild(acoes);
 
     item.appendChild(avatar);
     item.appendChild(corpo);
@@ -147,6 +147,132 @@ topo.append(autor, dataPost);
 function formatarData(isoString) {
   const data = new Date(isoString);
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+// Comentários dos norths, salvos dentro do próprio post.
+function criarComentariosNorth(post, containerId) {
+  if (!post.id) {
+    post.id = crypto.randomUUID
+      ? crypto.randomUUID()
+      : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+  }
+
+  const comentarios = Array.isArray(post.comentarios) ? post.comentarios : [];
+  const painel = document.createElement("div");
+  painel.className = "north-comentarios";
+  painel.dataset.northId = String(post.id);
+  painel.id = "comentarios-" + containerId + "-" + posts.indexOf(post);
+  painel.hidden = true;
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "north-comentar";
+  botao.dataset.northId = String(post.id);
+  botao.textContent = "comentar (" + comentarios.length + ")";
+  botao.setAttribute("aria-expanded", "false");
+  botao.setAttribute("aria-controls", painel.id);
+  botao.addEventListener("click", function () {
+    painel.hidden = !painel.hidden;
+    botao.setAttribute("aria-expanded", String(!painel.hidden));
+    if (!painel.hidden) campo.focus();
+  });
+
+  const lista = document.createElement("div");
+  lista.className = "north-comentarios-lista";
+  lista.setAttribute("aria-live", "polite");
+  renderComentariosNorth(lista, comentarios);
+
+  const formulario = document.createElement("form");
+  formulario.className = "north-comentario-formulario";
+  const campo = document.createElement("textarea");
+  campo.rows = 2;
+  campo.maxLength = 500;
+  campo.placeholder = "escreva um comentário...";
+  campo.setAttribute("aria-label", "comentário para este north");
+
+  const enviar = document.createElement("button");
+  enviar.type = "submit";
+  enviar.textContent = "enviar comentário";
+  formulario.append(campo, enviar);
+
+  formulario.addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    const texto = campo.value.trim();
+    if (!texto || texto.length > campo.maxLength) return;
+    const atual = posts.find(function (item) { return String(item.id) === String(post.id); });
+    if (!atual) return;
+
+    const anteriores = Array.isArray(atual.comentarios) ? atual.comentarios : [];
+    const novos = anteriores.concat({
+      autor: "." + nomeNorth(perfil.nome),
+      fotoAutor: perfil.foto || "",
+      texto: texto,
+      data: new Date().toISOString()
+    });
+    const novosPosts = posts.map(function (item) {
+      return item === atual ? Object.assign({}, item, { comentarios: novos }) : item;
+    });
+
+    try {
+      localStorage.setItem("meusPosts", JSON.stringify(novosPosts));
+    } catch (erro) {
+      alert("não foi possível salvar o comentário. Verifique o espaço do navegador.");
+      return;
+    }
+
+    atual.comentarios = novos;
+    campo.value = "";
+    // Atualiza as duas listas sem recriar os formulários ou apagar rascunhos.
+    document.querySelectorAll(".north-comentarios").forEach(function (area) {
+      if (area.dataset.northId === String(atual.id)) {
+        renderComentariosNorth(area.querySelector(".north-comentarios-lista"), novos);
+      }
+    });
+    document.querySelectorAll(".north-comentar").forEach(function (controle) {
+      if (controle.dataset.northId === String(atual.id)) {
+        controle.textContent = "comentar (" + novos.length + ")";
+      }
+    });
+    campo.focus();
+  });
+
+  painel.append(lista, formulario);
+  return { botao: botao, painel: painel };
+}
+
+function renderComentariosNorth(lista, comentarios) {
+  lista.replaceChildren();
+  if (!comentarios.length) {
+    const vazio = document.createElement("p");
+    vazio.className = "north-comentarios-vazio";
+    vazio.textContent = "nenhum comentário ainda. abra a conversa ✳";
+    lista.appendChild(vazio);
+    return;
+  }
+
+  comentarios.forEach(function (comentario) {
+    const item = document.createElement("div");
+    item.className = "north-comentario-item";
+    const avatar = document.createElement("div");
+    avatar.className = "north-comentario-avatar";
+    aplicarAvatarNorth(avatar, comentario.fotoAutor || "", comentario.autor || "usuário");
+
+    const corpo = document.createElement("div");
+    corpo.className = "north-comentario-corpo";
+    const autor = document.createElement("strong");
+    autor.textContent = comentario.autor || ".usuário";
+    const horario = document.createElement("time");
+    const data = new Date(comentario.data);
+    if (!Number.isNaN(data.getTime())) {
+      horario.dateTime = data.toISOString();
+      horario.textContent = formatarData(comentario.data);
+    }
+    const texto = document.createElement("p");
+    texto.textContent = comentario.texto || "";
+    corpo.append(autor, horario, texto);
+    item.append(avatar, corpo);
+    lista.appendChild(item);
+  });
 }
 
 // compositor de norths
@@ -2347,6 +2473,9 @@ function fecharTudoEVoltarHome() {
 }
 
 function abrirEmBreve(titulo) {
+  document.querySelectorAll(".view-pagina").forEach(function (view) {
+    view.classList.remove("show");
+  });
   document.querySelector(".pagina-corpo").style.display = "none";
   document.querySelector(".guestbook").style.display = "none";
   document.getElementById("tituloEmBreve").textContent = titulo;
@@ -2520,3 +2649,56 @@ function aplicarHeaderCustom() {
   }
 }
 aplicarHeaderCustom();
+
+// O explore do topo usa o mesmo acesso que o explore da lateral.
+document.getElementById("navExplore").addEventListener("click", function (evento) {
+  evento.preventDefault();
+  document.getElementById("qnExplore").click();
+});
+
+// Clique no emoji do mood para escolher outro.
+(function () {
+  const botao = document.getElementById("btnMoodEmoji");
+  const menu = document.getElementById("moodEmojis");
+  const opcoes = ["😐", "🙂", "😊", "🥰", "😎", "🤔", "🥹", "😭", "😴", "😤", "🤯", "🫠", "🤩", "🙃", "🥺", "😌", "💭", "✨", "💗", "🔥"];
+
+  function fechar() {
+    menu.hidden = true;
+    botao.setAttribute("aria-expanded", "false");
+  }
+
+  opcoes.forEach(function (emoji) {
+    const opcao = document.createElement("button");
+    opcao.type = "button";
+    opcao.textContent = emoji;
+    opcao.setAttribute("aria-label", "usar " + emoji + " no mood");
+    opcao.addEventListener("click", function () {
+      const atualizado = Object.assign({}, perfil, { moodEmoji: emoji });
+      try {
+        localStorage.setItem("meuPerfil", JSON.stringify(atualizado));
+      } catch (erro) {
+        alert("não foi possível salvar o emoji. Verifique o espaço do navegador.");
+        return;
+      }
+      perfil = atualizado;
+      renderPerfil();
+      fechar();
+      botao.focus();
+    });
+    menu.appendChild(opcao);
+  });
+
+  botao.addEventListener("click", function () {
+    menu.hidden = !menu.hidden;
+    botao.setAttribute("aria-expanded", String(!menu.hidden));
+  });
+  document.addEventListener("click", function (evento) {
+    if (!botao.contains(evento.target) && !menu.contains(evento.target)) fechar();
+  });
+  document.addEventListener("keydown", function (evento) {
+    if (evento.key === "Escape" && !menu.hidden) {
+      fechar();
+      botao.focus();
+    }
+  });
+})();

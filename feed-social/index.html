@@ -28,7 +28,7 @@
   <div class="topo-direita">
     <nav class="topo-menu">
       <a href="index.html">home</a>
-      <a href="#">explore</a>
+      <a href="#" id="navExplore">explore</a>
       <a href="#">signals (0)</a>
       <a href="#" id="linkSettings">settings</a>
       <a href="../north-net-portal/index.html" id="navLogout">logout</a>
@@ -129,36 +129,44 @@
         <button class="btn-editar" id="btnEditarPerfil">✎ edit my profile</button>
       </div>
 
-      <div class="mood-box">
+            <div class="mood-box">
         <span class="mood-label">mood:</span>
         <div class="mood-conteudo">
           <span id="moodTexto">pensativa.</span>
-          <span class="mood-emoji">😐</span>
+          <button type="button" id="btnMoodEmoji" class="mood-emoji"
+            title="alterar emoji do mood" aria-label="alterar emoji do mood"
+            aria-expanded="false" aria-controls="moodEmojis">😐</button>
         </div>
+        <div id="moodEmojis" class="mood-emojis" role="group"
+          aria-label="escolha o emoji do mood" hidden></div>
       </div>
 
       <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-valor" id="statNorths">0</span>
-          <span class="stat-label">norths</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-valor" id="statFriends">0</span>
-          <span class="stat-label">friends</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-valor" id="statFavorites">0</span>
-          <span class="stat-label">favorites</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-valor" id="statGroups">0</span>
-          <span class="stat-label">groups</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-valor" id="statPhotos">0</span>
-          <span class="stat-label">photos</span>
-        </div>
-      </div>
+  <div class="stat-item">
+    <span class="stat-valor" id="statNorths">0</span>
+    <span class="stat-label">norths</span>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-valor" id="statFriends">0</span>
+    <span class="stat-label">friends</span>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-label stat-estrela"
+      role="img" aria-label="favoritos" title="favoritos">✳</span>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-valor" id="statGroups">0</span>
+    <span class="stat-label">groups</span>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-valor" id="statPhotos">0</span>
+    <span class="stat-label">photos</span>
+  </div>
+</div>
 
       <div class="linha-dupla">
 
@@ -204,16 +212,41 @@
 
      <div class="caixa">
   <div class="caixa-topo caixa-topo-norths">
-    <span><span class="caixa-icone">✳</span> norths <a href="#" id="linkViewAllNorths" class="link-claro">(view all)</a></span>
-    <span class="norths-links"><a href="#">norths</a> | <a href="#">lines</a> | <a href="#">replies</a></span>
-  </div>
+    <span>
+      <span class="caixa-icone">✳</span>
+      norths
+      <a href="#" id="linkViewAllNorths" class="link-claro">
+        (view all)
+      </a>
+    </span>
+  </div><!-- fecha somente a faixa rosa -->
 
   <div class="north-compositor">
-    <textarea id="campoNorth" placeholder="o que você está pensando hoje?" maxlength="280" rows="2"></textarea>
-    <img id="previewNorth" class="preview-foto-perfil">
+    <textarea
+      id="campoNorth"
+      placeholder="o que você está pensando hoje?"
+      maxlength="280"
+      rows="2"
+    ></textarea>
+
+    <img
+      id="previewNorth"
+      class="preview-foto-perfil"
+      alt="prévia da foto"
+    >
+
     <div class="north-compositor-rodape">
-      <label class="label-arquivo-north" for="campoImagemNorth">📷 foto</label>
-      <input type="file" id="campoImagemNorth" accept="image/*" hidden>
+      <label class="label-arquivo-north" for="campoImagemNorth">
+        📷 foto
+      </label>
+
+      <input
+        type="file"
+        id="campoImagemNorth"
+        accept="image/*"
+        hidden
+      >
+
       <button id="btnPublicarNorth">publicar</button>
     </div>
   </div>
