@@ -215,9 +215,7 @@
     <span>
       <span class="caixa-icone">✳</span>
       norths
-      <a href="#" id="linkViewAllNorths" class="link-claro"></a>
-        (view all)
-      </a>
+      <a href="#" id="linkViewAllNorths" class="link-claro">(view all)</a>
     </span>
   </div><!-- fecha somente a faixa rosa -->
 
@@ -243,7 +241,7 @@
       <input
         type="file"
         id="campoImagemNorth"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         hidden
       >
 
@@ -484,7 +482,7 @@
     <h3>editar perfil</h3>
 
     <label>foto de perfil</label>
-    <input type="file" id="inputFotoPerfil" accept="image/*">
+    <input type="file" id="inputFotoPerfil" accept="image/jpeg,image/png,image/webp,image/gif">
 
     <div id="previewFotoPerfil" class="preview-avatar-perfil"></div>
 
@@ -527,8 +525,8 @@
     </select>
 
     <div id="camposAboutImagem">
-      <label for="inputAboutImagem">imagem (até 1 MB)</label>
-      <input type="file" id="inputAboutImagem" accept="image/*">
+      <label for="inputAboutImagem">imagem (comprimida automaticamente)</label>
+      <input type="file" id="inputAboutImagem" accept="image/jpeg,image/png,image/webp,image/gif">
 
       <img
         id="previewAboutImagem"
@@ -576,8 +574,13 @@
     <div class="modal-editar">
       <h3>nova memory</h3>
       <label>foto</label>
-      <input type="file" id="inputFotoMemoria" accept="image/*">
-      <img id="previewMemoria" class="preview-foto-perfil">
+      <input type="file" id="inputFotoMemoria" accept="image/jpeg,image/png,image/webp,image/gif">
+            <img id="previewMemoria" class="preview-foto-perfil" alt="prévia da memory">
+      <p id="memoriaContador" class="midia-nota" aria-live="polite"></p>
+      <div id="memoriaSubstituicao" hidden>
+        <label for="memoriaSubstituir">memory que será substituída</label>
+        <select id="memoriaSubstituir"></select>
+      </div>
       <label>legenda</label>
       <input type="text" id="inputLegendaMemoria" placeholder="ex: summer 2026.">
       <div class="modal-botoes">
@@ -597,7 +600,7 @@
     <input
       type="file"
       id="inputImagemGrupo"
-      accept="image/*"
+      accept="image/jpeg,image/png,image/webp,image/gif"
     >
 
     <img
@@ -692,7 +695,7 @@
 
     <div id="camposImagemBloco" hidden>
       <label for="imagemBlocoGrupo">imagem</label>
-      <input type="file" id="imagemBlocoGrupo" accept="image/*">
+      <input type="file" id="imagemBlocoGrupo" accept="image/jpeg,image/png,image/webp,image/gif">
 
       <img
         id="previewBlocoGrupo"
@@ -805,7 +808,7 @@
 
     <div class="settings-linha settings-bloco">
       <label>capa do header (portal)</label>
-      <input type="file" id="inputHeaderImagem" accept="image/*">
+      <input type="file" id="inputHeaderImagem" accept="image/jpeg,image/png,image/webp,image/gif">
       <div class="header-cor-opcoes" id="headerCorOpcoes"></div>
       <button id="btnResetarHeader" class="btn-settings-secundario">usar padrão</button>
     </div>
@@ -818,6 +821,17 @@
       <input type="checkbox" id="checkNotificacoes" checked>
     </div>
   </div>
+
+  <div class="caixa settings-caixa">
+    <div class="caixa-topo"><span class="caixa-icone">✳</span> minhas imagens</div>
+    <div class="midia-painel">
+      <p id="midiaUsoTexto" aria-live="polite"></p>
+      <progress id="midiaUsoBarra" max="5000000" value="0" aria-label="espaço usado pelas imagens"></progress>
+      <p id="midiaUsoAviso" class="midia-nota"></p>
+    </div>
+  </div>
+
+
 
   <div class="caixa settings-caixa">
     <div class="caixa-topo"><span class="caixa-icone">✳</span> dados</div>

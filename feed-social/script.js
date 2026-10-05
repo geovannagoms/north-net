@@ -1,3 +1,213 @@
+
+// Regras locais de imagens do North.net.
+// No futuro, estes mesmos limites também serão verificados no servidor.
+const northMidia = (function () {
+  const limites = Object.freeze({
+    memorias: 10,
+    conta: 5_000_000,
+    imagem: 200_000,
+    entrada: 10_000_000,
+    lado: 1600
+  });
+  const chaves = ["meuPerfil", "meusPosts", "minhasMemorias", "meusGrupos", "meuTema"];
+
+  function ler(chave) {
+    const salvo = localStorage.getItem(chave);
+    return salvo ? JSON.parse(salvo) : null;
+  }
+
+  function bytesImagem(valor) {
+    if (typeof valor !== "string" || !valor.startsWith("data:image/")) return 0;
+    const virgula = valor.indexOf(",");
+    if (virgula < 0) return 0;
+    const conteudo = valor.slice(virgula + 1);
+    if (valor.slice(0, virgula).includes(";base64")) {
+      const tamanho = conteudo.replace(/\s/g, "").length;
+      const ajuste = conteudo.endsWith("==") ? 2 : conteudo.endsWith("=") ? 1 : 0;
+      return Math.max(0, Math.floor(tamanho * 3 / 4) - ajuste);
+    }
+    try {
+      return new TextEncoder().encode(decodeURIComponent(conteudo)).length;
+    } catch (_) {
+      return conteudo.length;
+    }
+  }
+
+  function imagens(dados, resultado = []) {
+    if (typeof dados === "string") {
+      if (bytesImagem(dados)) resultado.push(dados);
+    } else if (Array.isArray(dados)) {
+      dados.forEach(function (item) { imagens(item, resultado); });
+    } else if (dados && typeof dados === "object") {
+      Object.entries(dados).forEach(function ([campo, valor]) {
+        // Avatares históricos são cópias da foto de perfil, não novos uploads.
+        if (campo !== "fotoAutor") imagens(valor, resultado);
+      });
+    }
+    return resultado;
+  }
+
+  function uso(alteracoes = {}) {
+    return chaves.reduce(function (total, chave) {
+      const dados = Object.prototype.hasOwnProperty.call(alteracoes, chave)
+        ? alteracoes[chave] : ler(chave);
+      return total + imagens(dados).reduce(function (soma, imagem) {
+        return soma + bytesImagem(imagem);
+      }, 0);
+    }, 0);
+  }
+
+  function formatar(bytes) {
+    return (bytes / 1_000_000).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    }) + " MB";
+  }
+
+  function atualizarPainel() {
+    const texto = document.getElementById("midiaUsoTexto");
+    const barra = document.getElementById("midiaUsoBarra");
+    if (!texto || !barra) return;
+    try {
+      const total = uso();
+      const memorias = ler("minhasMemorias") || [];
+      texto.textContent = formatar(total) + " de 5 MB · " + memorias.length + " de 10 memories";
+      barra.max = limites.conta;
+      barra.value = Math.min(total, limites.conta);
+      document.getElementById("midiaUsoAviso").textContent = total >= limites.conta
+        ? "Seu espaço de imagens está cheio. As fotos continuam disponíveis; remova ou substitua uma imagem para liberar espaço."
+        : "As imagens não expiram. Quando o espaço acabar, você escolhe o que remover ou substituir.";
+    } catch (_) {
+      texto.textContent = "Não foi possível consultar o espaço de imagens.";
+    }
+  }
+
+  function gravar(chave, dados) {
+    try {
+      if (chaves.includes(chave)) {
+        const anterior = ler(chave);
+        if (chave === "minhasMemorias") {
+          const quantidadeAntiga = Array.isArray(anterior) ? anterior.length : 0;
+          if (dados.length > limites.memorias && dados.length > quantidadeAntiga) {
+            alert("Você pode guardar até 10 memories. Escolha uma para substituir ou apague uma antes de adicionar outra.");
+            return false;
+          }
+        }
+
+        const antigas = new Map();
+        imagens(anterior).forEach(function (imagem) {
+          antigas.set(imagem, (antigas.get(imagem) || 0) + 1);
+        });
+        for (const imagem of imagens(dados)) {
+          const disponiveis = antigas.get(imagem) || 0;
+          if (disponiveis) antigas.set(imagem, disponiveis - 1);
+          else if (bytesImagem(imagem) > limites.imagem) {
+            alert("A nova imagem precisa ter até 200 KB depois da compressão. Selecione a foto novamente para prepará-la.");
+            return false;
+          }
+        }
+
+        const atual = uso();
+        const previsto = uso({ [chave]: dados });
+        // Dados antigos acima da cota podem ser editados ou reduzidos.
+        if (previsto > limites.conta && previsto > atual) {
+          alert("Seu limite de imagens é 5 MB. Esta alteração usaria " + formatar(previsto) + ". Remova ou substitua uma imagem para liberar espaço. Você pode continuar publicando textos.");
+          return false;
+        }
+      }
+      localStorage.setItem(chave, JSON.stringify(dados));
+    } catch (erro) {
+      alert(erro.name === "QuotaExceededError"
+        ? "O armazenamento deste navegador encheu. Nada desta alteração foi salvo. Baixe seus dados em settings e remova uma imagem para liberar espaço."
+        : "Não foi possível salvar esta alteração. Seus dados anteriores continuam guardados.");
+      return false;
+    }
+    atualizarPainel();
+    return true;
+  }
+
+  function lerArquivo(arquivo) {
+    return new Promise(function (resolve, reject) {
+      const leitor = new FileReader();
+      leitor.onload = function () { resolve(String(leitor.result)); };
+      leitor.onerror = function () { reject(new Error("Não foi possível ler a imagem.")); };
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function prepararImagem(arquivo, ladoMaximo = limites.lado) {
+    if (!arquivo || !/^image\/(jpeg|png|webp|gif)$/.test(arquivo.type)) {
+      throw new Error("Escolha uma imagem JPG, PNG, WebP ou GIF.");
+    }
+    if (arquivo.size > limites.entrada) {
+      throw new Error("Escolha uma imagem original de até 10 MB.");
+    }
+    if (arquivo.type === "image/gif") {
+      if (arquivo.size > limites.imagem) {
+        throw new Error("O GIF precisa ter até 200 KB para manter a animação. Escolha um GIF menor ou uma foto.");
+      }
+      return lerArquivo(arquivo);
+    }
+
+    const url = URL.createObjectURL(arquivo);
+    const imagem = new Image();
+    try {
+      await new Promise(function (resolve, reject) {
+        imagem.onload = resolve;
+        imagem.onerror = function () { reject(new Error("Não foi possível abrir a imagem.")); };
+        imagem.src = url;
+      });
+      const original = Math.max(imagem.naturalWidth, imagem.naturalHeight);
+      if (!original) throw new Error("Esta imagem não tem dimensões válidas.");
+      let lado = Math.min(ladoMaximo, original);
+      const minimo = Math.min(320, lado);
+      const canvas = document.createElement("canvas");
+      const contexto = canvas.getContext("2d");
+      if (!contexto) throw new Error("Não foi possível preparar a imagem neste navegador.");
+
+      while (true) {
+        const escala = lado / original;
+        canvas.width = Math.max(1, Math.round(imagem.naturalWidth * escala));
+        canvas.height = Math.max(1, Math.round(imagem.naturalHeight * escala));
+        contexto.clearRect(0, 0, canvas.width, canvas.height);
+        contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+        for (const qualidade of [0.86, 0.78, 0.70, 0.62]) {
+          const blob = await new Promise(function (resolve, reject) {
+            canvas.toBlob(function (resultado) {
+              if (resultado) resolve(resultado);
+              else reject(new Error("Não foi possível comprimir a imagem."));
+            }, "image/webp", qualidade);
+          });
+          if (blob.size <= limites.imagem) return await lerArquivo(blob);
+          // Se WebP não for suportado, o navegador usa PNG.
+          if (blob.type === "image/png") break;
+        }
+        if (lado <= minimo) break;
+        lado = Math.max(minimo, Math.floor(lado * 0.82));
+      }
+      throw new Error("A imagem ainda passou de 200 KB. Tente recortar a foto ou escolher uma imagem mais simples.");
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function baixar(imagem, nome = "foto-northnet") {
+    const formato = /^data:image\/([\w+.-]+)/.exec(imagem || "");
+    if (!formato) return;
+    const extensao = formato[1] === "jpeg" ? "jpg" : formato[1];
+    const link = document.createElement("a");
+    link.href = imagem;
+    link.download = nome + "." + extensao;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  document.addEventListener("DOMContentLoaded", atualizarPainel);
+  window.addEventListener("storage", atualizarPainel);
+  if (document.readyState !== "loading") queueMicrotask(atualizarPainel);
+  return { limites, uso, formatar, bytesImagem, gravar, prepararImagem, baixar, atualizarPainel };
+})();
+
 // perfil
 let perfil = JSON.parse(localStorage.getItem("meuPerfil")) || {
   foto: "",
@@ -110,9 +320,15 @@ topo.append(autor, dataPost);
     curtirEl.innerHTML = (post.curtido ? "♥" : "♡") + " curtir (" + (post.curtidas || 0) + ")";
     curtirEl.style.cursor = "pointer";
     curtirEl.addEventListener("click", function () {
-      post.curtido = !post.curtido;
-      post.curtidas = (post.curtidas || 0) + (post.curtido ? 1 : -1);
-      localStorage.setItem("meusPosts", JSON.stringify(posts));
+      const curtido = !post.curtido;
+      const novosPosts = posts.map(function (item) {
+        return item === post ? Object.assign({}, item, {
+          curtido: curtido,
+          curtidas: Math.max(0, (item.curtidas || 0) + (curtido ? 1 : -1))
+        }) : item;
+      });
+      if (!northMidia.gravar("meusPosts", novosPosts)) return;
+      posts = novosPosts;
       renderNorths("northsLista", 4);
       if (document.getElementById("viewNorths").classList.contains("show")) {
         renderNorths("northsListaCompleta");
@@ -123,21 +339,48 @@ topo.append(autor, dataPost);
     apagarEl.textContent = "apagar";
     apagarEl.style.cursor = "pointer";
     apagarEl.addEventListener("click", function () {
-      if (confirm("apagar este north?")) {
-        posts.splice(indice, 1);
-        localStorage.setItem("meusPosts", JSON.stringify(posts));
+      if (!confirm("Apagar este north?")) return;
+      const novosPosts = posts.filter(function (item) { return item !== post; });
+      if (!northMidia.gravar("meusPosts", novosPosts)) return;
+      posts = novosPosts;
+      renderPerfil();
+      renderNorths("northsLista", 4);
+      if (document.getElementById("viewNorths").classList.contains("show")) {
+        renderNorths("northsListaCompleta");
+      }
+    });
+         acoes.appendChild(curtirEl);
+    acoes.appendChild(apagarEl);
+    if (post.imagem) {
+      const baixarFoto = document.createElement("button");
+      baixarFoto.type = "button";
+      baixarFoto.textContent = "baixar foto";
+      baixarFoto.addEventListener("click", function () {
+        northMidia.baixar(post.imagem, "north-foto");
+      });
+      const removerFoto = document.createElement("button");
+      removerFoto.type = "button";
+      removerFoto.textContent = "remover foto";
+      removerFoto.addEventListener("click", function () {
+        const temTexto = Boolean(String(post.texto || "").trim());
+        const aviso = temTexto
+          ? "Remover só a foto e manter o texto deste north?"
+          : "Este north só tem uma foto. Removê-la também apagará o north. Continuar?";
+        if (!confirm(aviso)) return;
+        const novosPosts = temTexto
+          ? posts.map(function (item) { return item === post ? Object.assign({}, item, { imagem: "" }) : item; })
+          : posts.filter(function (item) { return item !== post; });
+        if (!northMidia.gravar("meusPosts", novosPosts)) return;
+        posts = novosPosts;
         renderPerfil();
         renderNorths("northsLista", 4);
         if (document.getElementById("viewNorths").classList.contains("show")) {
           renderNorths("northsListaCompleta");
         }
-      }
-    });
-
-     acoes.appendChild(curtirEl);
-acoes.appendChild(apagarEl);
-corpo.appendChild(acoes);
-
+      });
+      acoes.append(baixarFoto, removerFoto);
+    }
+    corpo.appendChild(acoes);
     item.appendChild(avatar);
     item.appendChild(corpo);
     northsLista.appendChild(item);
@@ -280,67 +523,79 @@ const campoNorth = document.getElementById("campoNorth");
 const campoImagemNorth = document.getElementById("campoImagemNorth");
 const previewNorth = document.getElementById("previewNorth");
 const btnPublicarNorth = document.getElementById("btnPublicarNorth");
+let imagemNorthPendente = "";
+let leituraImagemNorth = 0;
+let preparandoNorth = false;
 
-campoImagemNorth.addEventListener("change", function () {
+campoImagemNorth.addEventListener("change", async function () {
   const arquivo = campoImagemNorth.files[0];
-  if (!arquivo) {
-    previewNorth.style.display = "none";
-    return;
-  }
-  const leitor = new FileReader();
-  leitor.onload = function () {
-    previewNorth.src = leitor.result;
+  const leituraAtual = ++leituraImagemNorth;
+  imagemNorthPendente = "";
+  previewNorth.removeAttribute("src");
+  previewNorth.style.display = "none";
+  preparandoNorth = false;
+  btnPublicarNorth.disabled = false;
+  if (!arquivo) return;
+  preparandoNorth = true;
+  btnPublicarNorth.disabled = true;
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo);
+    if (leituraAtual !== leituraImagemNorth) return;
+    imagemNorthPendente = imagem;
+    previewNorth.src = imagem;
     previewNorth.style.display = "block";
-  };
-  leitor.readAsDataURL(arquivo);
+  } catch (erro) {
+    if (leituraAtual !== leituraImagemNorth) return;
+    campoImagemNorth.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraImagemNorth) {
+      preparandoNorth = false;
+      btnPublicarNorth.disabled = false;
+    }
+  }
 });
 
 btnPublicarNorth.addEventListener("click", function () {
+  if (preparandoNorth) return;
   const texto = campoNorth.value.trim();
-  const arquivo = campoImagemNorth.files[0];
-
-  if (texto === "" && !arquivo) {
-    alert("escreva algo ou escolha uma foto!");
+  if (texto.length > 280) return;
+  if (!texto && !imagemNorthPendente) {
+    alert("Escreva algo ou escolha uma foto!");
     return;
   }
-
-  if (arquivo) {
-    const leitor = new FileReader();
-    leitor.onload = function () {
-      criarNorth(texto, leitor.result);
-    };
-    leitor.readAsDataURL(arquivo);
-  } else {
-    criarNorth(texto, "");
-  }
+  criarNorth(texto, imagemNorthPendente);
 });
 
 function criarNorth(texto, imagemBase64) {
-  posts.unshift({
+  const novo = {
     texto: texto,
     imagem: imagemBase64,
     data: new Date().toISOString(),
     curtido: false,
     curtidas: 0
-  });
-
-  localStorage.setItem("meusPosts", JSON.stringify(posts));
-
+  };
+  const novosPosts = [novo].concat(posts);
+  if (!northMidia.gravar("meusPosts", novosPosts)) return false;
+  posts = novosPosts;
   campoNorth.value = "";
   campoImagemNorth.value = "";
+  imagemNorthPendente = "";
+  previewNorth.removeAttribute("src");
   previewNorth.style.display = "none";
-
   renderPerfil();
   renderNorths("northsLista", 4);
+  if (document.getElementById("viewNorths").classList.contains("show")) {
+    renderNorths("northsListaCompleta");
+  }
+  return true;
 }
 
 // view: todos os norths
 document.getElementById("linkViewAllNorths").addEventListener("click", function (evento) {
   evento.preventDefault();
   renderNorths("northsListaCompleta");
-  document.querySelector(".pagina-corpo").style.display = "none";
-  document.querySelector(".guestbook").style.display = "none";
-  document.getElementById("viewNorths").classList.add("show");
+  mostrarViewGrupo("viewNorths");
 });
 
 document.getElementById("voltarDeNorths").addEventListener("click", function (evento) {
@@ -414,37 +669,23 @@ document.getElementById("btnRemoverFotoPerfil").addEventListener("click", functi
   atualizarPreviewPerfil();
 });
 
-inputFotoPerfil.addEventListener("change", function () {
+inputFotoPerfil.addEventListener("change", async function () {
   const arquivo = inputFotoPerfil.files[0];
   if (!arquivo) return;
-
-  if (!arquivo.type.startsWith("image/") || arquivo.size > 1024 * 1024) {
-    alert("escolha uma imagem de até 1 MB.");
-    inputFotoPerfil.value = "";
-    return;
-  }
-
   const leituraAtual = ++leituraFotoPerfil;
   btnSalvarEdicao.disabled = true;
-
-  const leitor = new FileReader();
-
-  leitor.onload = function () {
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo, 512);
     if (leituraAtual !== leituraFotoPerfil) return;
-
-    fotoPerfilPendente = leitor.result;
-    btnSalvarEdicao.disabled = false;
+    fotoPerfilPendente = imagem;
     atualizarPreviewPerfil();
-  };
-
-  leitor.onerror = function () {
+  } catch (erro) {
     if (leituraAtual !== leituraFotoPerfil) return;
-
-    alert("não foi possível ler a foto.");
-    btnSalvarEdicao.disabled = false;
-  };
-
-  leitor.readAsDataURL(arquivo);
+    inputFotoPerfil.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraFotoPerfil) btnSalvarEdicao.disabled = false;
+  }
 });
 
 btnSalvarEdicao.addEventListener("click", function () {
@@ -456,12 +697,7 @@ btnSalvarEdicao.addEventListener("click", function () {
     mood: inputMood.value.trim() || "tranquila."
   });
 
-  try {
-    localStorage.setItem("meuPerfil", JSON.stringify(atualizado));
-  } catch (erro) {
-    alert("não foi possível salvar o perfil. Tente uma foto menor.");
-    return;
-  }
+    if (!northMidia.gravar("meuPerfil", atualizado)) return;
 
   perfil = atualizado;
   renderPerfil();
@@ -565,12 +801,7 @@ function salvarAboutBlocos(blocos) {
     aboutBlocos: blocos
   });
 
-  try {
-    localStorage.setItem("meuPerfil", JSON.stringify(atualizado));
-  } catch (erro) {
-    alert("não foi possível salvar. Tente uma imagem menor.");
-    return false;
-  }
+    if (!northMidia.gravar("meuPerfil", atualizado)) return false;
 
   perfil = atualizado;
   renderAboutBlocos();
@@ -675,38 +906,25 @@ document.getElementById("tipoAboutBloco").addEventListener(
   mostrarCamposAbout
 );
 
-document.getElementById("inputAboutImagem").addEventListener("change", function (evento) {
-  const arquivo = evento.target.files[0];
+document.getElementById("inputAboutImagem").addEventListener("change", async function (evento) {
+  const input = evento.target;
+  const arquivo = input.files[0];
   if (!arquivo) return;
-
-  if (!arquivo.type.startsWith("image/") || arquivo.size > 1024 * 1024) {
-    alert("escolha uma imagem de até 1 MB.");
-    evento.target.value = "";
-    return;
-  }
-
   const leituraAtual = ++leituraImagemAbout;
   const botao = document.getElementById("btnSalvarAboutBloco");
   botao.disabled = true;
-
-  const leitor = new FileReader();
-
-  leitor.onload = function () {
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo);
     if (leituraAtual !== leituraImagemAbout) return;
-
-    imagemAboutPendente = leitor.result;
+    imagemAboutPendente = imagem;
     mostrarPreviewAbout();
-    botao.disabled = false;
-  };
-
-  leitor.onerror = function () {
+  } catch (erro) {
     if (leituraAtual !== leituraImagemAbout) return;
-
-    alert("não foi possível ler a imagem.");
-    botao.disabled = false;
-  };
-
-  leitor.readAsDataURL(arquivo);
+    input.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraImagemAbout) botao.disabled = false;
+  }
 });
 
 document.getElementById("btnSalvarAboutBloco").addEventListener("click", function () {
@@ -834,57 +1052,56 @@ let memorias = JSON.parse(localStorage.getItem("minhasMemorias")) || [];
 function renderMemoriaPrincipal() {
   const foto = document.getElementById("memoriaFotoPrincipal");
   const texto = document.getElementById("memoriaTextoPrincipal");
-
-  if (memorias.length === 0) {
+  if (!memorias.length) {
     foto.style.backgroundImage = "";
     texto.textContent = "nenhuma memória ainda.";
     return;
   }
-
-  const ultima = memorias[0];
-  foto.style.backgroundImage = "url('" + ultima.foto + "')";
+  foto.style.backgroundImage = "url(" + JSON.stringify(memorias[0].foto) + ")";
   foto.style.backgroundSize = "cover";
   foto.style.backgroundPosition = "center";
-  texto.textContent = ultima.legenda;
+  texto.textContent = memorias[0].legenda;
 }
 
 function renderGridMemorias() {
   const grid = document.getElementById("gridTodasMemorias");
-  grid.innerHTML = "";
-
-  if (memorias.length === 0) {
+  grid.replaceChildren();
+  if (!memorias.length) {
     grid.innerHTML = '<p class="norths-vazio">nenhuma memory ainda.</p>';
     return;
   }
-
-  memorias.forEach(function (mem, indice) {
+  memorias.forEach(function (mem) {
     const card = document.createElement("div");
     card.className = "memoria-card";
+    const foto = document.createElement("div");
+    foto.className = "memoria-card-foto";
+    foto.style.backgroundImage = "url(" + JSON.stringify(mem.foto) + ")";
+    const legenda = document.createElement("div");
+    legenda.className = "memoria-card-legenda";
+    const texto = document.createElement("span");
+    texto.textContent = mem.legenda;
+    const acoes = document.createElement("div");
+    acoes.className = "memoria-acoes";
 
-    const fotoEl = document.createElement("div");
-    fotoEl.className = "memoria-card-foto";
-    fotoEl.style.backgroundImage = "url('" + mem.foto + "')";
-
-    const legendaEl = document.createElement("div");
-    legendaEl.className = "memoria-card-legenda";
-
-    const textoEl = document.createElement("span");
-    textoEl.textContent = mem.legenda;
-
-    const apagarEl = document.createElement("span");
-    apagarEl.className = "memoria-card-apagar";
-    apagarEl.textContent = "apagar";
-    apagarEl.addEventListener("click", function () {
-      memorias.splice(indice, 1);
-      localStorage.setItem("minhasMemorias", JSON.stringify(memorias));
+    function acao(rotulo, callback) {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.textContent = rotulo;
+      botao.addEventListener("click", callback);
+      acoes.appendChild(botao);
+    }
+    acao("baixar", function () { northMidia.baixar(mem.foto, "memory-northnet"); });
+    acao("substituir", function () { abrirFormularioMemoria(mem); });
+    acao("apagar", function () {
+      if (!confirm("Apagar esta memory?")) return;
+      const novas = memorias.filter(function (item) { return item !== mem; });
+      if (!northMidia.gravar("minhasMemorias", novas)) return;
+      memorias = novas;
       renderMemoriaPrincipal();
       renderGridMemorias();
     });
-
-    legendaEl.appendChild(textoEl);
-    legendaEl.appendChild(apagarEl);
-    card.appendChild(fotoEl);
-    card.appendChild(legendaEl);
+    legenda.append(texto, acoes);
+    card.append(foto, legenda);
     grid.appendChild(card);
   });
 }
@@ -895,62 +1112,117 @@ const overlayMemoria = document.getElementById("overlayMemoria");
 const inputFotoMemoria = document.getElementById("inputFotoMemoria");
 const previewMemoria = document.getElementById("previewMemoria");
 const inputLegendaMemoria = document.getElementById("inputLegendaMemoria");
+const seletorMemoria = document.getElementById("memoriaSubstituir");
+let imagemMemoriaPendente = "";
+let leituraImagemMemoria = 0;
+let memoriasNoFormulario = [];
+
+function abrirFormularioMemoria(alvo = null) {
+  leituraImagemMemoria++;
+  imagemMemoriaPendente = "";
+  inputFotoMemoria.value = "";
+  inputLegendaMemoria.value = alvo ? alvo.legenda || "" : "";
+  previewMemoria.removeAttribute("src");
+  previewMemoria.style.display = "none";
+  document.getElementById("btnSalvarMemoria").disabled = false;
+  memoriasNoFormulario = memorias.slice();
+  seletorMemoria.replaceChildren();
+  const opcaoInicial = document.createElement("option");
+  opcaoInicial.value = "";
+  opcaoInicial.textContent = "escolha a memory que será substituída";
+  seletorMemoria.appendChild(opcaoInicial);
+  memoriasNoFormulario.forEach(function (mem, indice) {
+    const opcao = document.createElement("option");
+    opcao.value = String(indice);
+    opcao.textContent = (indice + 1) + ". " + (mem.legenda || "sem legenda");
+    seletorMemoria.appendChild(opcao);
+  });
+  if (alvo) seletorMemoria.value = String(memoriasNoFormulario.indexOf(alvo));
+  document.getElementById("memoriaSubstituicao").hidden = !alvo && memorias.length < northMidia.limites.memorias;
+  document.getElementById("memoriaContador").textContent = memorias.length + " de 10 memories. " +
+    (memorias.length > 10
+      ? "As antigas foram preservadas. Apague as que escolher para ficar dentro do limite."
+      : "Ao chegar a 10, escolha uma para substituir.");
+  overlayMemoria.classList.add("show");
+}
+
+function fecharFormularioMemoria() {
+  leituraImagemMemoria++;
+  imagemMemoriaPendente = "";
+  document.getElementById("btnSalvarMemoria").disabled = false;
+  overlayMemoria.classList.remove("show");
+}
 
 document.getElementById("btnAddMemoria").addEventListener("click", function () {
-  inputFotoMemoria.value = "";
-  inputLegendaMemoria.value = "";
-  previewMemoria.style.display = "none";
-  overlayMemoria.classList.add("show");
+  abrirFormularioMemoria();
 });
-
-document.getElementById("btnCancelarMemoria").addEventListener("click", function () {
-  overlayMemoria.classList.remove("show");
-});
-
+document.getElementById("btnCancelarMemoria").addEventListener("click", fecharFormularioMemoria);
 overlayMemoria.addEventListener("click", function (evento) {
-  if (evento.target === overlayMemoria) {
-    overlayMemoria.classList.remove("show");
-  }
+  if (evento.target === overlayMemoria) fecharFormularioMemoria();
 });
 
-inputFotoMemoria.addEventListener("change", function () {
+inputFotoMemoria.addEventListener("change", async function () {
   const arquivo = inputFotoMemoria.files[0];
   if (!arquivo) return;
-  const leitor = new FileReader();
-  leitor.onload = function () {
-    previewMemoria.src = leitor.result;
+  const leituraAtual = ++leituraImagemMemoria;
+  const botao = document.getElementById("btnSalvarMemoria");
+  botao.disabled = true;
+  imagemMemoriaPendente = "";
+  previewMemoria.style.display = "none";
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo);
+    if (leituraAtual !== leituraImagemMemoria) return;
+    imagemMemoriaPendente = imagem;
+    previewMemoria.src = imagem;
     previewMemoria.style.display = "block";
-  };
-  leitor.readAsDataURL(arquivo);
+  } catch (erro) {
+    if (leituraAtual !== leituraImagemMemoria) return;
+    inputFotoMemoria.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraImagemMemoria) botao.disabled = false;
+  }
 });
 
 document.getElementById("btnSalvarMemoria").addEventListener("click", function () {
-  const arquivo = inputFotoMemoria.files[0];
-  const legenda = inputLegendaMemoria.value.trim() || "sem legenda.";
-
-  if (!arquivo) {
-    alert("escolha uma foto!");
+  if (document.getElementById("btnSalvarMemoria").disabled) return;
+  if (!imagemMemoriaPendente) {
+    alert("Escolha uma foto e confira a prévia antes de salvar.");
     return;
   }
-
-  const leitor = new FileReader();
-  leitor.onload = function () {
-    memorias.unshift({ foto: leitor.result, legenda: legenda, data: new Date().toISOString() });
-    localStorage.setItem("minhasMemorias", JSON.stringify(memorias));
-    renderMemoriaPrincipal();
-    renderGridMemorias();
-    overlayMemoria.classList.remove("show");
-  };
-  leitor.readAsDataURL(arquivo);
+  const precisaSubstituir = !document.getElementById("memoriaSubstituicao").hidden;
+  if (precisaSubstituir && seletorMemoria.value === "") {
+    alert("Escolha qual memory deseja substituir.");
+    return;
+  }
+  const novas = memorias.slice();
+  if (precisaSubstituir) {
+    const alvo = memoriasNoFormulario[Number(seletorMemoria.value)];
+    const indice = novas.indexOf(alvo);
+    if (indice < 0) {
+      alert("Essa memory já foi removida. Abra o formulário novamente.");
+      return;
+    }
+    if (!confirm("Substituir a memory escolhida? Baixe a foto antiga antes, se quiser guardá-la.")) return;
+    novas.splice(indice, 1);
+  }
+  novas.unshift({
+    foto: imagemMemoriaPendente,
+    legenda: inputLegendaMemoria.value.trim() || "sem legenda.",
+    data: new Date().toISOString()
+  });
+  if (!northMidia.gravar("minhasMemorias", novas)) return;
+  memorias = novas;
+  renderMemoriaPrincipal();
+  renderGridMemorias();
+  fecharFormularioMemoria();
 });
 
 // navegação da view "todas as memories"
 document.getElementById("linkViewAllMemorias").addEventListener("click", function (evento) {
   evento.preventDefault();
   renderGridMemorias();
-  document.querySelector(".pagina-corpo").style.display = "none";
-  document.querySelector(".guestbook").style.display = "none";
-  document.getElementById("viewMemorias").classList.add("show");
+  mostrarViewGrupo("viewMemorias");
 });
 
 document.getElementById("voltarDeMemorias").addEventListener("click", function (evento) {
@@ -994,7 +1266,7 @@ grupos.forEach(function (grupo) {
 });
 
 if (migrouGrupos) {
-  localStorage.setItem("meusGrupos", JSON.stringify(grupos));
+  northMidia.gravar("meusGrupos", grupos);
 }
 
 function obterGrupo(id) {
@@ -1090,13 +1362,12 @@ function renderTodosGrupos() {
     apagar.className = "grupo-card-apagar";
     apagar.textContent = "apagar";
     apagar.addEventListener("click", function () {
-      if (!confirm("apagar este grupo?")) return;
-
-      grupos = grupos.filter(function (item) {
+      if (!confirm("Apagar este grupo?")) return;
+      const novosGrupos = grupos.filter(function (item) {
         return String(item.id) !== String(grupo.id);
       });
-
-      localStorage.setItem("meusGrupos", JSON.stringify(grupos));
+      if (!northMidia.gravar("meusGrupos", novosGrupos)) return;
+      grupos = novosGrupos;
       renderGruposResumo();
       renderTodosGrupos();
     });
@@ -1129,6 +1400,8 @@ function atualizarPreviewGrupo() {
 }
 
 function abrirFormularioGrupo(id) {
+  leituraImagemGrupo++;
+  document.getElementById("btnSalvarGrupo").disabled = false;
   const grupo = id == null ? null : obterGrupo(id);
   if (id != null && !grupo) return;
 
@@ -1167,6 +1440,7 @@ function abrirEdicaoGrupo(id) {
 }
 
 function fecharFormularioGrupo() {
+  leituraImagemGrupo++;
   overlayGrupo.classList.remove("show");
   editandoGrupoId = null;
   inputImagemGrupo.value = "";
@@ -1186,31 +1460,26 @@ overlayGrupo.addEventListener("click", function (evento) {
   if (evento.target === overlayGrupo) fecharFormularioGrupo();
 });
 
-inputImagemGrupo.addEventListener("change", function () {
+let leituraImagemGrupo = 0;
+
+inputImagemGrupo.addEventListener("change", async function () {
   const arquivo = inputImagemGrupo.files[0];
   if (!arquivo) return;
-
-  if (!arquivo.type.startsWith("image/")) {
-    alert("escolha uma imagem válida.");
-    inputImagemGrupo.value = "";
-    return;
-  }
-
-  const leitor = new FileReader();
-  document.getElementById("btnSalvarGrupo").disabled = true;
-
-  leitor.onload = function () {
-    imagemGrupoPendente = leitor.result;
+  const leituraAtual = ++leituraImagemGrupo;
+  const botao = document.getElementById("btnSalvarGrupo");
+  botao.disabled = true;
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo);
+    if (leituraAtual !== leituraImagemGrupo) return;
+    imagemGrupoPendente = imagem;
     atualizarPreviewGrupo();
-    document.getElementById("btnSalvarGrupo").disabled = false;
-  };
-
-  leitor.onerror = function () {
-    alert("não foi possível ler a imagem.");
-    document.getElementById("btnSalvarGrupo").disabled = false;
-  };
-
-  leitor.readAsDataURL(arquivo);
+  } catch (erro) {
+    if (leituraAtual !== leituraImagemGrupo) return;
+    inputImagemGrupo.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraImagemGrupo) botao.disabled = false;
+  }
 });
 
 document.getElementById("btnSalvarGrupo").addEventListener("click", function () {
@@ -1257,12 +1526,7 @@ document.getElementById("btnSalvarGrupo").addEventListener("click", function () 
       })
     : [grupo].concat(grupos);
 
-  try {
-    localStorage.setItem("meusGrupos", JSON.stringify(novaLista));
-  } catch (erro) {
-    alert("não foi possível salvar. Verifique o espaço do navegador ou escolha uma imagem menor.");
-    return;
-  }
+    if (!northMidia.gravar("meusGrupos", novaLista)) return;
 
   grupos = novaLista;
   renderGruposResumo();
@@ -1406,57 +1670,6 @@ document.getElementById("voltarDeGrupoDetalhe").addEventListener("click", functi
   }
 });
 
-document.getElementById("btnVerMembrosGrupo").addEventListener("click", function () {
-  const grupo = obterGrupo(grupoAbertoId);
-  if (!grupo) return;
-
-  const lista = document.getElementById("listaMembrosGrupo");
-  lista.replaceChildren();
-
-  if (!grupo.membros.length) {
-    lista.textContent = "ninguém entrou neste grupo ainda.";
-  }
-
-  grupo.membros.forEach(function (membro) {
-    const item = document.createElement("div");
-    item.className = "grupo-membro";
-    item.textContent = membro;
-    lista.appendChild(item);
-  });
-
-  mostrarViewGrupo("viewGrupoMembros");
-});
-
-document.getElementById("voltarDeGrupoMembros").addEventListener("click", function (evento) {
-  evento.preventDefault();
-
-  if (voltarMembrosAoChat) {
-    voltarMembrosAoChat = false;
-    renderMensagensGrupoChat();
-    mostrarViewGrupo("viewGrupoChat");
-  } else {
-    renderGrupoDetalhe();
-    mostrarViewGrupo("viewGrupoDetalhe");
-  }
-});
-
-let voltarMembrosAoChat = false;
-
-document.getElementById("btnEntrarChatGrupo").addEventListener("click", function () {
-  voltarMembrosAoChat =
-  document.getElementById("viewGrupoChat").classList.contains("show");
-  const grupo = obterGrupo(grupoAbertoId);
-  if (!grupo) return;
-
-  document.getElementById("chatNomeGrupo").textContent = grupo.nome;
-  mostrarViewGrupo("viewGrupoChat");
-});
-
-document.getElementById("chatVoltar").addEventListener("click", function () {
-  renderGrupoDetalhe();
-  mostrarViewGrupo("viewGrupoDetalhe");
-});
-
 // Membros e chat do grupo.
 (function () {
   const el = function (id) { return document.getElementById(id); };
@@ -1489,20 +1702,16 @@ document.getElementById("chatVoltar").addEventListener("click", function () {
     const novosGrupos = grupos.map(function (item) {
       return String(item.id) === String(grupo.id) ? atualizado : item;
     });
-    try {
-      localStorage.setItem("meusGrupos", JSON.stringify(novosGrupos));
-    } catch (erro) {
-      alert("não foi possível salvar. O espaço do navegador pode estar cheio; tente uma foto menor.");
-      return false;
-    }
+    if (!northMidia.gravar("meusGrupos", novosGrupos)) return false;
     grupos = novosGrupos;
     return true;
   }
 
   function prepararHistorico() {
     try {
-      usuarioChatId = localStorage.getItem("northChatUsuarioId") || idNovoGrupo();
-      localStorage.setItem("northChatUsuarioId", usuarioChatId);
+      const salvo = localStorage.getItem("northChatUsuarioId");
+      usuarioChatId = salvo || idNovoGrupo();
+      if (!salvo) localStorage.setItem("northChatUsuarioId", usuarioChatId);
     } catch (erro) {
       alert("não foi possível preparar o chat. Verifique o espaço do navegador.");
       return false;
@@ -1788,7 +1997,7 @@ document.getElementById("chatVoltar").addEventListener("click", function () {
     if (!texto && !fotoPendente) return;
     const nova = {
       id: idNovoGrupo(), autorId: usuarioChatId,
-      autor: usuarioAtualGrupo(), fotoAutor: perfil.foto || "",
+      autor: usuarioAtualGrupo(), fotoAutor: "",
       texto: texto, imagem: fotoPendente,
       data: new Date().toISOString(), reacoes: {}
     };
@@ -1811,35 +2020,32 @@ document.getElementById("chatVoltar").addEventListener("click", function () {
   el("chatCancelarEdicao").addEventListener("click", terminarEdicao);
 
   el("chatCamera").addEventListener("click", function () { el("chatFoto").click(); });
-  el("chatFoto").addEventListener("change", function (evento) {
+  el("chatFoto").addEventListener("change", async function (evento) {
     const arquivo = evento.target.files[0];
     evento.target.value = "";
     if (!arquivo || editandoId) return;
-    if (!/^image\/(png|jpeg|webp|gif)$/.test(arquivo.type) || arquivo.size > 1024 * 1024) {
-      alert("escolha uma foto JPG, PNG, WebP ou GIF de até 1 MB.");
-      return;
-    }
     const idGrupo = grupoAbertoId;
     const leitura = ++leituraFoto;
     lendoFoto = true;
     atualizarCompositor();
-    const leitor = new FileReader();
-    leitor.onload = function () {
+    try {
+      const imagem = await northMidia.prepararImagem(arquivo);
       if (leitura !== leituraFoto || String(idGrupo) !== String(grupoAbertoId)) return;
-      lendoFoto = false;
-      fotoPendente = String(leitor.result);
-      atualizarCompositor();
+      fotoPendente = imagem;
       campo.focus();
-    };
-    leitor.onerror = function () {
-      if (leitura !== leituraFoto) return;
-      lendoFoto = false;
-      atualizarCompositor();
-      alert("não foi possível ler a foto.");
-    };
-    leitor.readAsDataURL(arquivo);
+    } catch (erro) {
+      if (leitura !== leituraFoto || String(idGrupo) !== String(grupoAbertoId)) return;
+      alert(erro.message);
+    } finally {
+      if (leitura === leituraFoto && String(idGrupo) === String(grupoAbertoId)) {
+        lendoFoto = false;
+        atualizarCompositor();
+      }
+    }
   });
-  el("chatRemoverAnexo").addEventListener("click", function () {
+    el("chatRemoverAnexo").addEventListener("click", function () {
+    leituraFoto++;
+    lendoFoto = false;
     fotoPendente = "";
     atualizarCompositor();
   });
@@ -1889,12 +2095,7 @@ function salvarPainelGrupo(blocos) {
     return String(item.id) === String(grupoAbertoId) ? atualizado : item;
   });
 
-  try {
-    localStorage.setItem("meusGrupos", JSON.stringify(novosGrupos));
-  } catch (erro) {
-    alert("não foi possível salvar o painel. Tente usar uma imagem menor.");
-    return false;
-  }
+   if (!northMidia.gravar("meusGrupos", novosGrupos)) return false;
 
   grupos = novosGrupos;
   renderPainelGrupo(atualizado);
@@ -2093,38 +2294,25 @@ document.getElementById("tipoBlocoGrupo").addEventListener(
   mostrarCamposBlocoGrupo
 );
 
-document.getElementById("imagemBlocoGrupo").addEventListener("change", function (evento) {
-  const arquivo = evento.target.files[0];
+document.getElementById("imagemBlocoGrupo").addEventListener("change", async function (evento) {
+  const input = evento.target;
+  const arquivo = input.files[0];
   if (!arquivo) return;
-
-  if (!arquivo.type.startsWith("image/") || arquivo.size > 1024 * 1024) {
-    alert("escolha uma imagem de até 1 MB.");
-    evento.target.value = "";
-    return;
-  }
-
   const leituraAtual = ++leituraImagemBloco;
-  const botaoSalvar = document.getElementById("btnSalvarBlocoGrupo");
-  botaoSalvar.disabled = true;
-
-  const leitor = new FileReader();
-
-  leitor.onload = function () {
+  const botao = document.getElementById("btnSalvarBlocoGrupo");
+  botao.disabled = true;
+  try {
+    const imagem = await northMidia.prepararImagem(arquivo);
     if (leituraAtual !== leituraImagemBloco) return;
-
-    imagemBlocoPendente = leitor.result;
+    imagemBlocoPendente = imagem;
     mostrarPreviewBlocoGrupo();
-    botaoSalvar.disabled = false;
-  };
-
-  leitor.onerror = function () {
+  } catch (erro) {
     if (leituraAtual !== leituraImagemBloco) return;
-
-    alert("não foi possível ler a imagem.");
-    botaoSalvar.disabled = false;
-  };
-
-  leitor.readAsDataURL(arquivo);
+    input.value = "";
+    alert(erro.message);
+  } finally {
+    if (leituraAtual === leituraImagemBloco) botao.disabled = false;
+  }
 });
 
 document.getElementById("btnSalvarBlocoGrupo").addEventListener("click", function () {
@@ -2227,9 +2415,7 @@ function renderTodosFriends() {
 function abrirViewFriends(evento) {
   evento.preventDefault();
   renderTodosFriends();
-  document.querySelector(".pagina-corpo").style.display = "none";
-  document.querySelector(".guestbook").style.display = "none";
-  document.getElementById("viewFriends").classList.add("show");
+  mostrarViewGrupo("viewFriends");
 }
 
 document.getElementById("linkViewAllFriends").addEventListener("click", abrirViewFriends);
@@ -2271,8 +2457,11 @@ function criarRecadoEl(recado, indice) {
   deleteLink.addEventListener("click", function (evento) {
     evento.preventDefault();
     if (confirm("apagar este recado?")) {
-      recados.splice(indice, 1);
-      localStorage.setItem("meuGuestbook", JSON.stringify(recados));
+      const novosRecados = recados.filter(function (_, posicao) {
+        return posicao !== indice;
+      });
+      if (!northMidia.gravar("meuGuestbook", novosRecados)) return;
+      recados = novosRecados;
       renderGuestbook();
     }
   });
@@ -2335,9 +2524,7 @@ document.getElementById("linkViewAllGuestbook").addEventListener("click", functi
   recados.forEach(function (recado, indice) {
     completo.appendChild(criarRecadoEl(recado, indice));
   });
-  document.querySelector(".pagina-corpo").style.display = "none";
-  document.querySelector(".guestbook").style.display = "none";
-  document.getElementById("viewGuestbook").classList.add("show");
+  mostrarViewGrupo("viewGuestbook");
 });
 
 document.getElementById("voltarDeGuestbook").addEventListener("click", function (evento) {
@@ -2374,8 +2561,9 @@ document.getElementById("btnSalvarSign").addEventListener("click", function () {
     return;
   }
 
-  recados.unshift({ nome: nome, texto: texto, data: new Date().toISOString(), resposta: "" });
-  localStorage.setItem("meuGuestbook", JSON.stringify(recados));
+  const novosRecados = [{ nome: nome, texto: texto, data: new Date().toISOString(), resposta: "" }].concat(recados);
+  if (!northMidia.gravar("meuGuestbook", novosRecados)) return;
+  recados = novosRecados;
   renderGuestbook();
   overlaySign.classList.remove("show");
 });
@@ -2393,8 +2581,14 @@ overlayResponder.addEventListener("click", function (evento) {
 
 document.getElementById("btnSalvarResposta").addEventListener("click", function () {
   const resposta = document.getElementById("inputResposta").value.trim();
-  recados[indiceRespondendo].resposta = resposta;
-  localStorage.setItem("meuGuestbook", JSON.stringify(recados));
+  if (indiceRespondendo == null || !recados[indiceRespondendo]) return;
+  const novosRecados = recados.map(function (recado, indice) {
+    return indice === indiceRespondendo
+      ? Object.assign({}, recado, { resposta: resposta })
+      : recado;
+  });
+  if (!northMidia.gravar("meuGuestbook", novosRecados)) return;
+  recados = novosRecados;
   renderGuestbook();
   overlayResponder.classList.remove("show");
 });
@@ -2412,9 +2606,7 @@ document.getElementById("checkNotificacoes").addEventListener("change", function
 
 document.getElementById("linkSettings").addEventListener("click", function (evento) {
   evento.preventDefault();
-  document.querySelector(".pagina-corpo").style.display = "none";
-  document.querySelector(".guestbook").style.display = "none";
-  document.getElementById("viewSettings").classList.add("show");
+  mostrarViewGrupo("viewSettings");
 });
 
 document.getElementById("voltarDeSettings").addEventListener("click", function (evento) {
@@ -2446,7 +2638,8 @@ document.getElementById("btnExportarDados").addEventListener("click", function (
     memorias: memorias,
     grupos: grupos,
     recados: recados,
-    preferencias: preferencias
+    preferencias: preferencias,
+    tema: tema
   };
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -2545,7 +2738,7 @@ function aplicarTema() {
 
   document.body.classList.toggle("tema-escuro", tema.escuro);
 
-  localStorage.setItem("meuTema", JSON.stringify(tema));
+  northMidia.gravar("meuTema", tema);
 }
 
 aplicarTema();
@@ -2602,38 +2795,48 @@ if (checkModoEscuro) {
   // customização do header
   const inputHeaderImagem = document.getElementById("inputHeaderImagem");
   const headerCorOpcoes = document.getElementById("headerCorOpcoes");
+  let leituraHeaderImagem = 0;
 
   ["#1E3A6E", "#C23B7E", "#2C8F5F", "#6E3FA8", "#C79600"].forEach(function (cor) {
     const swatch = document.createElement("span");
     swatch.className = "tom-swatch";
     swatch.style.background = cor;
     swatch.addEventListener("click", function () {
-      tema.headerCor = cor;
-      tema.headerImagem = "";
+      leituraHeaderImagem++;
+      const atualizado = Object.assign({}, tema, { headerCor: cor, headerImagem: "" });
+      if (!northMidia.gravar("meuTema", atualizado)) return;
+      tema = atualizado;
+      inputHeaderImagem.value = "";
       aplicarHeaderCustom();
-      localStorage.setItem("meuTema", JSON.stringify(tema));
     });
     headerCorOpcoes.appendChild(swatch);
   });
 
-  inputHeaderImagem.addEventListener("change", function () {
+  inputHeaderImagem.addEventListener("change", async function () {
     const arquivo = inputHeaderImagem.files[0];
     if (!arquivo) return;
-    const leitor = new FileReader();
-    leitor.onload = function () {
-      tema.headerImagem = leitor.result;
-      tema.headerCor = "";
+    const leituraAtual = ++leituraHeaderImagem;
+    try {
+      const imagem = await northMidia.prepararImagem(arquivo);
+      if (leituraAtual !== leituraHeaderImagem) return;
+      const atualizado = Object.assign({}, tema, { headerImagem: imagem, headerCor: "" });
+      if (!northMidia.gravar("meuTema", atualizado)) return;
+      tema = atualizado;
       aplicarHeaderCustom();
-      localStorage.setItem("meuTema", JSON.stringify(tema));
-    };
-    leitor.readAsDataURL(arquivo);
+    } catch (erro) {
+      if (leituraAtual !== leituraHeaderImagem) return;
+      inputHeaderImagem.value = "";
+      alert(erro.message);
+    }
   });
 
   document.getElementById("btnResetarHeader").addEventListener("click", function () {
-    tema.headerCor = "";
-    tema.headerImagem = "";
+    leituraHeaderImagem++;
+    const atualizado = Object.assign({}, tema, { headerCor: "", headerImagem: "" });
+    if (!northMidia.gravar("meuTema", atualizado)) return;
+    tema = atualizado;
+    inputHeaderImagem.value = "";
     aplicarHeaderCustom();
-    localStorage.setItem("meuTema", JSON.stringify(tema));
   });
 }
 

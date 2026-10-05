@@ -2258,3 +2258,16 @@ body.tema-escuro .grupos-lista strong {
   font-size: 30px;
   line-height: 1;
 }
+
+/* Limites de imagens */
+.midia-painel { padding: 14px; color: var(--cor-texto); }
+.midia-painel progress { width: 100%; height: 12px; margin: 10px 0; accent-color: var(--cor-media); }
+.midia-nota { font-size: 12px; line-height: 1.5; color: var(--cor-texto-suave); margin: 8px 0; }
+#memoriaSubstituicao[hidden] { display: none; }
+#memoriaSubstituir { width: 100%; max-width: 100%; border: 1px solid var(--cor-borda); border-radius: 6px; padding: 9px; background: var(--cor-card); color: var(--cor-texto); font: inherit; }
+.memoria-card-legenda { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+.memoria-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.memoria-acoes button, .north-acoes button { background: transparent; border: 0; padding: 0; color: var(--cor-media); font: inherit; cursor: pointer; }
+.north-acoes button { margin-right: 10px; }
+.memoria-acoes button:hover, .north-acoes button:hover { text-decoration: underline; }
+.north-compositor button:disabled, .modal-editar button:disabled { opacity: 0.65; cursor: wait; }
