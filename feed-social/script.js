@@ -1,4 +1,4 @@
-
+const northDados = northAuth.armazenamento;
 // Regras locais de imagens do North.net.
 // No futuro, estes mesmos limites também serão verificados no servidor.
 const northMidia = (function () {
@@ -12,7 +12,7 @@ const northMidia = (function () {
   const chaves = ["meuPerfil", "meusPosts", "minhasMemorias", "meusGrupos", "meuTema"];
 
   function ler(chave) {
-    const salvo = localStorage.getItem(chave);
+    const salvo = northDados.getItem(chave);
     return salvo ? JSON.parse(salvo) : null;
   }
 
@@ -114,7 +114,7 @@ const northMidia = (function () {
           return false;
         }
       }
-      localStorage.setItem(chave, JSON.stringify(dados));
+      northDados.setItem(chave, JSON.stringify(dados));
     } catch (erro) {
       alert(erro.name === "QuotaExceededError"
         ? "O armazenamento deste navegador encheu. Nada desta alteração foi salvo. Baixe seus dados em settings e remova uma imagem para liberar espaço."
@@ -209,16 +209,18 @@ const northMidia = (function () {
 })();
 
 // perfil
-let perfil = JSON.parse(localStorage.getItem("meuPerfil")) || {
+let perfil = JSON.parse(northDados.getItem("meuPerfil")) || {
   foto: "",
-  nome: "seu nome",
+  nome: northAuth.nomeUsuario(),
   citacao: "adicione uma citação.",
   aboutMe: "conte um pouco sobre você aqui.",
   mood: "tranquila."
 };
 
+if (perfil.nome === "seu nome" || !perfil.nome) perfil.nome = northAuth.nomeUsuario();
+
 // posts (norths)
-let posts = JSON.parse(localStorage.getItem("meusPosts")) || [];
+let posts = JSON.parse(northDados.getItem("meusPosts")) || [];
 
 renderPerfil();
 renderNorths("northsLista", 4);
@@ -457,7 +459,7 @@ function criarComentariosNorth(post, containerId) {
     });
 
     try {
-      localStorage.setItem("meusPosts", JSON.stringify(novosPosts));
+      northDados.setItem("meusPosts", JSON.stringify(novosPosts));
     } catch (erro) {
       alert("não foi possível salvar o comentário. Verifique o espaço do navegador.");
       return;
@@ -993,10 +995,16 @@ document.getElementById("btnSalvarAboutBloco").addEventListener("click", functio
 
 
 // logout
-document.getElementById("navLogout").addEventListener("click", function (evento) {
+document.getElementById("navLogout").addEventListener("click", async function (evento) {
   evento.preventDefault();
-  localStorage.setItem("northnetLogado", "false");
-  window.location.href = "../north-net-portal/login.html";
+  const link = evento.currentTarget;
+  if (link.dataset.saindo === "true") return;
+  link.dataset.saindo = "true";
+  try { await northAuth.sair(); }
+  catch (erro) {
+    alert(northAuth.mensagemErro(erro));
+    delete link.dataset.saindo;
+  }
 });
 
 // my icons
@@ -1022,7 +1030,7 @@ listaEmojisIcones.forEach(function (emoji) {
   btn.textContent = emoji;
   btn.addEventListener("click", function () {
     perfil.icones[indiceIconeEditando] = emoji;
-    localStorage.setItem("meuPerfil", JSON.stringify(perfil));
+    northDados.setItem("meuPerfil", JSON.stringify(perfil));
     renderIcones();
     overlayIcones.classList.remove("show");
   });
@@ -1047,7 +1055,7 @@ overlayIcones.addEventListener("click", function (evento) {
 });
 
 // memories
-let memorias = JSON.parse(localStorage.getItem("minhasMemorias")) || [];
+let memorias = JSON.parse(northDados.getItem("minhasMemorias")) || [];
 
 function renderMemoriaPrincipal() {
   const foto = document.getElementById("memoriaFotoPrincipal");
@@ -1233,7 +1241,7 @@ document.getElementById("voltarDeMemorias").addEventListener("click", function (
 });
 
 // groups: IDs persistem para que edição e navegação não dependam da posição na lista.
-let grupos = JSON.parse(localStorage.getItem("meusGrupos")) || [
+let grupos = JSON.parse(northDados.getItem("meusGrupos")) || [
   { nome: "poetas do norte", bio: "pra quem escreve pra não desaparecer." },
   { nome: "fotografia analógica", bio: "cliques que não se apagam." }
 ];
@@ -1633,7 +1641,7 @@ function alternarParticipacaoGrupo() {
     : grupo.membros.concat(usuario);
 
   try {
-    localStorage.setItem(
+    northDados.setItem(
       "meusGrupos",
       JSON.stringify(
         grupos.map(function (item) {
@@ -1709,9 +1717,9 @@ document.getElementById("voltarDeGrupoDetalhe").addEventListener("click", functi
 
   function prepararHistorico() {
     try {
-      const salvo = localStorage.getItem("northChatUsuarioId");
+      const salvo = northDados.getItem("northChatUsuarioId");
       usuarioChatId = salvo || idNovoGrupo();
-      if (!salvo) localStorage.setItem("northChatUsuarioId", usuarioChatId);
+      if (!salvo) northDados.setItem("northChatUsuarioId", usuarioChatId);
     } catch (erro) {
       alert("não foi possível preparar o chat. Verifique o espaço do navegador.");
       return false;
@@ -2430,7 +2438,7 @@ document.querySelectorAll(".voltar-friends").forEach(function (link) {
   });
 });
 // guestbook
-let recados = JSON.parse(localStorage.getItem("meuGuestbook")) || [
+let recados = JSON.parse(northDados.getItem("meuGuestbook")) || [
   { nome: ".clara", texto: "sua escrita me pega sempre. continue.", data: "2026-08-25T22:21:00", resposta: "" },
   { nome: ".gui", texto: "essa foto da cidade ficou incrível!", data: "2026-08-25T20:17:00", resposta: "" },
   { nome: ".isa", texto: "você vê o mundo diferente. é bonito isso.", data: "2026-08-24T23:02:00", resposta: "" }
@@ -2593,7 +2601,7 @@ document.getElementById("btnSalvarResposta").addEventListener("click", function 
   overlayResponder.classList.remove("show");
 });
 // settings
-let preferencias = JSON.parse(localStorage.getItem("minhasPreferencias")) || {
+let preferencias = JSON.parse(northDados.getItem("minhasPreferencias")) || {
   notificacoes: true
 };
 
@@ -2601,7 +2609,7 @@ document.getElementById("checkNotificacoes").checked = preferencias.notificacoes
 
 document.getElementById("checkNotificacoes").addEventListener("change", function (evento) {
   preferencias.notificacoes = evento.target.checked;
-  localStorage.setItem("minhasPreferencias", JSON.stringify(preferencias));
+  northDados.setItem("minhasPreferencias", JSON.stringify(preferencias));
 });
 
 document.getElementById("linkSettings").addEventListener("click", function (evento) {
@@ -2616,19 +2624,20 @@ document.getElementById("voltarDeSettings").addEventListener("click", function (
   document.querySelector(".guestbook").style.display = "";
 });
 
-document.getElementById("btnTrocarSenha").addEventListener("click", function () {
-  const novaSenha = document.getElementById("inputNovaSenha").value;
-  if (novaSenha === "") {
-    alert("digite uma senha nova!");
-    return;
-  }
-  const conta = JSON.parse(localStorage.getItem("northnetConta"));
-  if (conta) {
-    conta.senha = novaSenha;
-    localStorage.setItem("northnetConta", JSON.stringify(conta));
-    alert("senha atualizada!");
-    document.getElementById("inputNovaSenha").value = "";
-  }
+document.getElementById("btnTrocarSenha").addEventListener("click", async function (evento) {
+  const botao = evento.currentTarget;
+  const campo = document.getElementById("inputNovaSenha");
+  const novaSenha = campo.value;
+  if (novaSenha.length < 8) { alert("Use uma senha com pelo menos 8 caracteres."); return; }
+  if (botao.disabled) return;
+  botao.disabled = true;
+  try {
+    const resultado = await northAuth.cliente.auth.updateUser({ password: novaSenha });
+    if (resultado.error) throw resultado.error;
+    campo.value = "";
+    alert("Sua senha foi atualizada.");
+  } catch (erro) { alert(northAuth.mensagemErro(erro)); }
+  finally { botao.disabled = false; }
 });
 
 document.getElementById("btnExportarDados").addEventListener("click", function () {
@@ -2651,10 +2660,12 @@ document.getElementById("btnExportarDados").addEventListener("click", function (
 });
 
 document.getElementById("btnApagarConta").addEventListener("click", function () {
-  const confirmar = confirm("tem certeza? isso apaga TUDO (perfil, posts, memories, groups, guestbook) e não pode ser desfeito.");
+  const confirmar = confirm("Limpar os dados desta conta neste navegador? Perfil, norths, memories, grupos, guestbook e capa locais serão apagados. Sua conta continuará ativa. Baixe seus dados antes se quiser guardá-los.");
   if (!confirmar) return;
-  localStorage.clear();
-  window.location.href = "../north-net-portal/login.html";
+  try {
+    northAuth.armazenamento.clear();
+    window.location.reload();
+  } catch (erro) { alert("Não foi possível limpar os dados. Tente novamente."); }
 });
 // quick north: navegação
 function fecharTudoEVoltarHome() {
@@ -2720,7 +2731,7 @@ const paletas = {
   cinza:  ["#1C1F26", "#2E323C", "#4A4F5C", "#767C8C", "#B4B8C4"]
 };
 
-let tema = JSON.parse(localStorage.getItem("meuTema")) || {
+let tema = JSON.parse(northDados.getItem("meuTema")) || {
   familia: "azul",
   tomIndice: 2,
   escuro: false,
@@ -2878,7 +2889,7 @@ document.getElementById("navExplore").addEventListener("click", function (evento
     opcao.addEventListener("click", function () {
       const atualizado = Object.assign({}, perfil, { moodEmoji: emoji });
       try {
-        localStorage.setItem("meuPerfil", JSON.stringify(atualizado));
+        northDados.setItem("meuPerfil", JSON.stringify(atualizado));
       } catch (erro) {
         alert("não foi possível salvar o emoji. Verifique o espaço do navegador.");
         return;

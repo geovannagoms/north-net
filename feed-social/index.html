@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="north-auth-aguardando">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,14 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>html.north-auth-aguardando body { visibility: hidden; }</style>
 </head>
 <body>
 
-<script>
-  if (localStorage.getItem("northnetLogado") !== "true") {
-    window.location.href = "../north-net-portal/login.html";
-  }
-</script>
+
 
  <header class="topo">
   <a href="index.html" class="topo-marca">
@@ -787,7 +784,7 @@
     <div class="caixa-topo"><span class="caixa-icone">✳</span> conta</div>
     <div class="settings-linha">
       <label>trocar senha</label>
-      <input type="password" id="inputNovaSenha" placeholder="nova senha">
+      <input type="password" id="inputNovaSenha" autocomplete="new-password" minlength="8" placeholder="nova senha (mínimo 8 caracteres)">
       <button id="btnTrocarSenha">salvar</button>
     </div>
   </div>
@@ -839,7 +836,8 @@
       <button id="btnExportarDados" class="btn-settings-secundario">baixar meus dados</button>
     </div>
     <div class="settings-linha">
-      <button id="btnApagarConta" class="btn-settings-perigo">apagar minha conta</button>
+      <button id="btnApagarConta" class="btn-settings-perigo">limpar dados deste dispositivo</button>
+      <p class="midia-nota">Apaga os dados locais desta conta neste navegador. A conta e o login continuam ativos.</p>
     </div>
   </div>
 
@@ -851,6 +849,8 @@
   </div>
   <p class="norths-vazio">essa área ainda está sendo construída. volte em breve!</p>
 </div>
-  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../north-auth.js"></script>
+  <script>northAuth.carregarProtegida("script.js");</script>
 </body>
 </html>

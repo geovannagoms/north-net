@@ -7,20 +7,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="login.css">
+  <style>
+    .login-caixa .north-campo { display: block; text-align: left; margin: 14px 0; }
+    .login-caixa [hidden] { display: none !important; }
+    .north-campo span { display: block; margin-bottom: 6px; font: 500 13px Inter, sans-serif; }
+    .login-caixa .north-campo input { box-sizing: border-box; width: 100%; margin: 0; }
+    .login-caixa .north-login-link { background: transparent; color: inherit; border: 0; box-shadow: none; font: 500 13px Inter, sans-serif; text-decoration: underline; cursor: pointer; padding: 8px; width: auto; }
+    .login-caixa button:disabled { cursor: wait; opacity: .65; }
+    .login-caixa .north-login-info { font: 13px/1.6 Inter, sans-serif; min-height: 1.6em; }
+    .login-caixa .north-login-info[data-tipo="sucesso"] { color: #286042; }
+    .login-caixa .north-login-info[data-tipo="erro"] { color: #a62844; }
+  </style>
 </head>
 <body>
-
   <div class="login-caixa">
     <h1 class="logo">North<span class="logo-net">.net</span></h1>
     <p class="login-sub" id="loginSub">Crie sua conta para começar</p>
-
-    <input type="text" id="inputUsuario" placeholder="Usuário">
-    <input type="password" id="inputSenha" placeholder="Senha">
-
-    <button id="btnAcao">Criar conta</button>
-    <p class="login-erro" id="loginErro"></p>
+    <form id="formLogin">
+      <label class="north-campo" id="campoUsuario">
+        <span>Nome no North</span>
+        <input type="text" id="inputUsuario" placeholder="Seu nome ou apelido" autocomplete="nickname" maxlength="40" required>
+      </label>
+      <label class="north-campo">
+        <span>E-mail</span>
+        <input type="email" id="inputEmail" placeholder="Seu e-mail" autocomplete="email" required>
+      </label>
+      <label class="north-campo" id="campoSenha">
+        <span id="labelSenha">Senha</span>
+        <input type="password" id="inputSenha" placeholder="Pelo menos 8 caracteres" autocomplete="new-password" minlength="8" required>
+      </label>
+      <button id="btnAcao" type="submit" disabled>Criar conta</button>
+    </form>
+    <p class="login-erro north-login-info" id="loginErro" role="status" aria-live="polite">Preparando o acesso…</p>
+    <button id="btnAlternarModo" class="north-login-link" type="button" disabled>Já tenho uma conta — entrar</button>
+    <button id="btnRecuperarSenha" class="north-login-link" type="button" hidden disabled>Esqueci minha senha</button>
   </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../north-auth.js"></script>
   <script src="login.js"></script>
 </body>
 </html>
