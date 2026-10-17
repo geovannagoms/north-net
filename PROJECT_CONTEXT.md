@@ -2,16 +2,48 @@
 
 ## 1. O que é
 
-North.net é uma rede social nostálgica (inspirada em Orkut, iCarly.com, Instagram antigo) construída por uma pessoa iniciante em programação, guiada passo a passo. Hoje é single-user (sem backend real): um portal de entrada com login local, e um app principal tipo perfil-Orkut com posts ("norths"), grupos, amigos fictícios, guestbook e memories.
+North.net é uma rede social autoral em desenvolvimento, inspirada na estética de redes e sites sociais dos anos 2000 e início dos anos 2010, especialmente Orkut, iCarly.com e Instagram antigo.
+
+O projeto é desenvolvido com HTML, CSS e JavaScript puro e utiliza Supabase para autenticação de usuários.
+
+Atualmente, o North.net possui um portal de entrada com criação de conta e login, além de uma aplicação social com perfil, norths (publicações), grupos, guestbook, memories e outras funcionalidades em desenvolvimento.
 
 ## 2. Stack
 
-- HTML5, CSS3, JavaScript vanilla (ES6, sem módulos, sem bundler).
-- Sem framework, sem build step, sem package manager.
-- Sem backend, sem banco de dados real. Persistência 100% via `localStorage` do navegador (chave-valor, JSON.stringify/parse). Imagens são convertidas para base64 via `FileReader` e salvas direto como string no `localStorage`.
-- Fontes: Google Fonts — `Fredoka` (títulos/display) e `Inter` (corpo/UI), carregadas via `<link>` no `<head>`.
-- Ambiente de desenvolvimento: VS Code + extensão "Live Server" (Ritwick Dey), servindo em `http://127.0.0.1:5500`.
-- Sem testes automatizados.
+- HTML5
+- CSS3
+- JavaScript vanilla (ES6)
+- Supabase
+- Supabase Auth para autenticação e gerenciamento de usuários
+- Git e GitHub para versionamento
+- Sem framework front-end
+- Sem bundler ou build step
+
+### Autenticação
+
+A autenticação utiliza Supabase Auth.
+
+O sistema atualmente permite:
+
+- criação de conta com e-mail e senha;
+- nome/apelido armazenado nos metadados do usuário;
+- confirmação de cadastro por e-mail;
+- login com e-mail e senha;
+- persistência e renovação automática da sessão;
+- recuperação de senha por e-mail;
+- definição de nova senha;
+- logout;
+- proteção das páginas que exigem autenticação.
+
+O antigo sistema de autenticação baseado apenas em `localStorage` não é mais utilizado.
+
+### Armazenamento local
+
+Parte dos dados da aplicação ainda utiliza `localStorage`.
+
+O armazenamento local é separado por usuário autenticado, evitando que contas diferentes no mesmo navegador compartilhem os mesmos dados.
+
+A migração e integração dos dados da aplicação com o Supabase ainda está em desenvolvimento.
 
 ## 3. Estrutura de pastas
 
@@ -34,16 +66,29 @@ North-Net/                        ← pasta raiz aberta no VS Code
     └── script.js
 ```
 
-Não há mais pastas ou arquivos além desses. Cada uma das três pastas acima é independente (tem seu próprio `index.html`/`style.css`/`script.js`); elas só se conectam por links `<a href="../outra-pasta/index.html">`.
-
 ## 4. O que já está funcionando
 
+### Autenticação e contas
+
+- Cadastro de usuários com e-mail, senha e nome/apelido.
+- Confirmação de cadastro por e-mail.
+- Login utilizando Supabase Auth.
+- Sessão persistente com renovação automática.
+- Validação da sessão antes de liberar páginas protegidas.
+- Recuperação de senha por e-mail.
+- Definição de nova senha através do fluxo de recuperação.
+- Logout.
+- Mensagens de erro personalizadas para problemas de autenticação e conexão.
+- Separação dos dados locais de acordo com o usuário autenticado.
+
 ### north-net-portal
-- `login.html`: primeiro acesso cria conta (usuário+senha salvos em `localStorage["northnetConta"]`); acessos seguintes fazem login comparando com essa conta. Sucesso seta `localStorage["northnetLogado"] = "true"` e redireciona pro `index.html`.
-- `index.html`: moldura visual de "laptop" (CSS puro, sem imagem) com uma "tela" grande de capa. Capa pode ser: (a) padrão — gradiente + textura CSS com o texto "North.net" grande centralizado, ou (b) personalizada — foto enviada pelo usuário (upload, salva em base64 em `localStorage["northnetCapa"]`), com texto pequeno no canto. Botões de "Trocar capa" e "Remover capa (🗑)".
-- Dois "clipes" abaixo da capa: **Feed** (link ativo pra `../feed-social/index.html`) e **Estante** (desativado, sem link, pois Minha Estante não está pronta).
-- Botão "Sair da conta" seta `northnetLogado = "false"` e volta pro login.
-- Todo `index.html` do portal e do feed-social começa com um `<script>` inline que checa `localStorage["northnetLogado"]` e redireciona pro login se não estiver autenticado — isso é o "gate" de acesso, compartilhado entre pastas porque todas rodam na mesma origem (`127.0.0.1:5500`).
+- `login.html`: interface de autenticação integrada ao Supabase Auth, permitindo criar conta com nome/apelido, e-mail e senha, entrar em uma conta existente e iniciar o processo de recuperação de senha.
+- A autenticação é compartilhada entre o portal e o feed através do `north-auth.js`, responsável pela conexão com o Supabase e pelo gerenciamento da sessão do usuário.
+- As páginas protegidas verificam a sessão atual antes de liberar o acesso. Caso não exista uma sessão válida, o usuário é redirecionado para a página de login.
+- O sistema permite confirmação de cadastro por e-mail, recuperação de senha e definição de uma nova senha.
+- O logout encerra a sessão atual do Supabase e redireciona o usuário para a página de login.
+- `index.html`: moldura visual de "laptop" (CSS puro, sem imagem) com uma "tela" grande de capa. A capa pode ser padrão ou personalizada com uma imagem enviada pelo usuário.
+- Dois "clipes" abaixo da capa: **Feed** (link para `../feed-social/index.html`) e **Estante** (desativado enquanto a área Minha Estante permanece em desenvolvimento).
 
 ### feed-social (o núcleo do projeto)
 Página única (`index.html`) dividida em seções, todas renderizadas/manipuladas via JavaScript puro manipulando o DOM (sem framework):
@@ -63,36 +108,39 @@ Página única (`index.html`) dividida em seções, todas renderizadas/manipulad
 3. **Causa raiz de um bug de CSS não resolvida**: havia um conflito de especificidade fazendo `.sidebar-esquerda` renderizar `gap: 8px` ao invés dos `14px` definidos — foi contornado com `!important`, mas a regra duplicada/conflitante original não foi localizada e removida. Vale auditar o `style.css` do feed-social por regras `.sidebar-esquerda` duplicadas.
 4. **"Estante" (Minha Estante)** — projeto separado, funcional mas com visual que a usuária considerou incompleto/não gostou; está pausado e **não linkado** no portal (botão desativado).
 5. **Seções "em breve"**: explore, signals, favorites — têm apenas uma tela genérica de aviso "essa área ainda está sendo construída", sem função real.
-6. **Multiusuário real** — todo o "who's online", "top friends", membros de grupos, etc. são dados fictícios fixos no código. Migração pra multiusuário de verdade exigiria backend (Supabase foi cogitado e depois pausado em favor de terminar o visual primeiro) com auth e banco de dados — isso ainda não foi iniciado.
+6. **Integração com Supabase**: a autenticação com Supabase já está implementada e funcional. a integração dos demais dados da aplicação com o Supabase ainda está em desenvolvimento. o objetivo é reduzir gradualmente a dependência do armazenamento local e permitir que os dados necessários sejam persistidos entre dispositivos e sessões.
 7. Simplificação sugerida (não feita): trocar as várias funções repetidas de abrir/fechar "view-pagina" (cada seção tem sua própria lógica quase idêntica de esconder `.pagina-corpo` e mostrar a view) por uma função genérica única.
 
 ## 6. Padrões de código usados até aqui
 
 - **Nomenclatura**: variáveis e funções em português, `camelCase` (ex: `renderPerfil`, `criarNorth`, `overlayEditar`). IDs de elementos HTML em `camelCase` também, às vezes prefixados por contexto (`btnEditarPerfil`, `inputFotoPerfil`, `linkViewAllGrupos`, `qnHome` para itens do menu "quick north"). Classes CSS em português, `kebab-case` (ex: `.caixa-topo`, `.north-item`, `.view-pagina`).
-- **Persistência**: cada "entidade" tem sua própria chave no `localStorage`, sempre JSON stringificado: `meuPerfil`, `meusPosts`, `minhasMemorias`, `meusGrupos`, `meuGuestbook`, `minhasPreferencias`, `northnetConta`, `northnetLogado`, `northnetCapa`. Padrão de leitura: `let x = JSON.parse(localStorage.getItem("chave")) || <valorPadrao>;` no topo do script. Padrão de escrita: sempre que o estado muda, salva de novo com `localStorage.setItem("chave", JSON.stringify(x))` imediatamente (sem debounce).
+- **Persistência**: cada "entidade" tem sua própria chave no `localStorage`, sempre JSON stringificado: `meuPerfil`, `meusPosts`, `minhasMemorias`, `meusGrupos`, `meuGuestbook`, `minhasPreferencias`, `northnetCapa`. Padrão de leitura: `let x = JSON.parse(localStorage.getItem("chave")) || <valorPadrao>;` no topo do script. Padrão de escrita: sempre que o estado muda, salva de novo com `localStorage.setItem("chave", JSON.stringify(x))` imediatamente (sem debounce).
 - **Renderização**: sem virtual DOM nem templates — cada seção tem uma função `renderX()` que faz `container.innerHTML = ""` e reconstrói os elementos via `document.createElement` + `appendChild`. É chamada manualmente depois de qualquer alteração de dado (create/update/delete), nunca automática/reativa.
 - **Modais**: padrão `.overlay` (fundo escurecido, `position: fixed; inset: 0;`) contendo `.modal-editar`. Abre com `overlay.classList.add("show")`, fecha com `.remove("show")`, fecha também clicando fora (`if (evento.target === overlay)`).
 - **Páginas internas ("view all")**: padrão `.view-pagina` com `display:none` por padrão, classe `.show` pra aparecer; ao abrir, esconde `.pagina-corpo` e `.guestbook`; ao voltar, reverte. Não é roteamento de verdade (sem mudar URL/histórico do navegador).
-- **Imagens**: sempre via `<input type="file" accept="image/*">` + `FileReader.readAsDataURL()`, nunca upload pra servidor (não existe servidor). Preview imediato antes de salvar.
+- - **Imagens**: atualmente, parte das imagens é processada no navegador através de `FileReader` e armazenada localmente como Data URL. A estratégia de armazenamento está sendo revista conforme avança a integração com o Supabase.
 - **Erros**: sem tratamento formal de erro/try-catch estruturado; validações são `if` simples com `alert()` pra avisar o usuário (ex: "escreva algo ou escolha uma foto!"). Confirmações destrutivas usam `confirm()` nativo do navegador (ex: apagar post, apagar conta).
 - **Estilo geral**: paleta de cor azul-marinho/creme (`#1E3A6E`, `#3A5FA8`, `#F0EFE6`, `#DDD3B0`), gradientes lineares em headers e barras (`linear-gradient(180deg, #3A5FA8 0%, #1E3A6E 100%)`), bordas com `border-radius` pequeno (6-10px), sem CSS framework — tudo escrito à mão.
 
-## 7. Variáveis de ambiente / como rodar
+## 7. Configuração e execução
 
-Não há variáveis de ambiente — é um site 100% estático, sem chamadas a API externa nem chaves secretas (exceto Google Fonts via CDN público).
+O projeto utiliza Supabase para autenticação.
 
-Para rodar:
-1. Abrir a pasta raiz `North-Net/` no VS Code.
-2. Ter a extensão "Live Server" instalada.
-3. Clicar com botão direito em `north-net-portal/login.html` → "Open with Live Server" (ou usar o botão "Go Live" na barra inferior).
-4. Acessa em `http://127.0.0.1:5500/north-net-portal/login.html`.
+A configuração pública necessária para o cliente web está definida no arquivo `north-auth.js`.
 
-Não há passo de instalação (`npm install` etc.) porque não há dependências.
+Para executar o projeto localmente:
+
+1. Clone o repositório.
+2. Abra a pasta raiz do North.net no VS Code.
+3. Utilize a extensão Live Server.
+4. Abra `north-net-portal/login.html` com o Live Server.
+5. Crie uma conta ou entre com uma conta existente.
+
+O projeto deve ser executado através de HTTP/HTTPS. Abrir os arquivos diretamente pelo protocolo `file://` não é suportado.
 
 ## 8. Regras que não podem ser quebradas
 
 - **Nunca** remover o texto "North.net" fixo no HTML da capa do portal (é uma marca d'água intencional — mesmo com capa personalizada, é pra continuar visível, só menor/reposicionado).
-- **Nunca** trocar o mecanismo de autenticação por algo que quebre o compartilhamento entre pastas — o login funciona porque todas as pastas são servidas pela mesma origem (mesmo host:porta). Se migrar pra multiusuário/backend, isso precisa ser reconsiderado do zero, não só remendado.
 - **Nunca** remover ou renomear as chaves de `localStorage` já em uso (listadas na seção 6) sem migrar os dados existentes — a usuária já tem dados reais salvos localmente que não podem ser perdidos silenciosamente.
 - **Não introduzir build step, framework ou bundler** sem alinhar antes — a usuária é iniciante completa e está aprendendo com HTML/CSS/JS puro, passo a passo; qualquer ferramenta nova precisa ser introduzida com explicação, não silenciosamente.
 - **Não reverter o layout do feed-social pro formato antigo** (app mobile de abas com bottom nav) — esse foi completamente abandonado e substituído pelo layout desktop em 3 colunas estilo Orkut. O histórico de conversa mostra essa decisão como definitiva.
