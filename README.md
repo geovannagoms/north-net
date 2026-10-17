@@ -1,11 +1,63 @@
-# North-net
+# North.net
 
-North-net é uma rede social autoral em desenvolvimento, pensada para conectar pessoas por mei de perfis, grupos e conversas.
+North.net é uma rede social autoral em desenvolvimento, inspirada na experiência e na estética das redes sociais dos anos 2000 e início dos anos 2010.
+
+O projeto combina elementos inspirados em plataformas como Orkut e redes sociais modernas, reunindo perfis, publicações, grupos, memories, guestbook e outras formas de interação em uma interface própria.
+
+## Sobre o projeto
+
+O North.net nasceu como um projeto pessoal para explorar o desenvolvimento de uma rede social desde sua concepção, passando pelo planejamento das funcionalidades, criação da interface e implementação da lógica da aplicação.
+
+Atualmente, o projeto utiliza HTML, CSS e JavaScript no front-end e Supabase para autenticação de usuários, enquanto outras partes da aplicação continuam sendo desenvolvidas e gradualmente integradas ao backend.
+
+Além de ser uma aplicação em desenvolvimento, o North.net funciona como um projeto prático de aprendizado em desenvolvimento web, autenticação, persistência de dados e versionamento de código.
+
+## Funcionalidades
+
+O North.net já conta com diferentes recursos inspirados na experiência de redes sociais:
+
+- 🔐 Cadastro, login e recuperação de senha com Supabase Auth
+- 👤 Perfil personalizável com nome, foto, citação, mood e seção "about me"
+- 📝 Criação de norths (publicações) com texto e imagens
+- ❤️ Sistema de curtidas em publicações
+- 🖼️ Memories com fotos e legendas
+- 👥 Criação e gerenciamento de grupos
+- 💬 Guestbook para recados e respostas
+- 🎨 Personalização da capa do portal
+- 😀 Ícones de perfil personalizáveis
+- ⚙️ Área de configurações da conta
+- 📦 Exportação dos dados do usuário em JSON
+
+Algumas funcionalidades ainda estão em desenvolvimento, incluindo a expansão da integração com o Supabase, North.fm, playlist, Explore, Signals e Minha Estante.
 
 ## Tecnologias
 
-HTML, CSS e JavaScript.
+- HTML5
+- CSS3
+- JavaScript (ES6)
+- Supabase
+- Supabase Auth
+- Git
+- GitHub
 
-## Estado do projeto
+## Screenshots
 
-O site está em desenvolvimento. As funcionalidades e a interface estão sendo construídas e aprimoradas gradualmente.
+### Autenticação e portal
+
+<p align="center">
+  <img src="docs/images/login.png" alt="Tela de login do North.net" width="320">
+  <img src="docs/images/portal.png" alt="Portal principal do North.net" width="320">
+</p>
+
+### Feed e perfil
+
+<p align="center">
+  <img src="docs/images/feed-1.png" alt="Perfil e Memories no feed do North.net" width="48%">
+  <img src="docs/images/feed-2.png" alt="Norths, grupos e Guestbook do North.net" width="48%">
+</p>
+
+### Grupos
+
+<p align="center">
+  <img src="docs/images/grupo.png" alt="Página de grupo do North.net" width="700">
+</p>
