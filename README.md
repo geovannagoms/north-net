@@ -16,17 +16,17 @@ Além de ser uma aplicação em desenvolvimento, o North.net funciona como um pr
 
 O North.net já conta com diferentes recursos inspirados na experiência de redes sociais:
 
-- 🔐 Cadastro, login e recuperação de senha com Supabase Auth
-- 👤 Perfil personalizável com nome, foto, citação, mood e seção "about me"
-- 📝 Criação de norths (publicações) com texto e imagens
-- ❤️ Sistema de curtidas em publicações
-- 🖼️ Memories com fotos e legendas
-- 👥 Criação e gerenciamento de grupos
-- 💬 Guestbook para recados e respostas
-- 🎨 Personalização da capa do portal
-- 😀 Ícones de perfil personalizáveis
-- ⚙️ Área de configurações da conta
-- 📦 Exportação dos dados do usuário em JSON
+-  Cadastro, login e recuperação de senha com Supabase Auth
+-  Perfil personalizável com nome, foto, citação, mood e seção "about me"
+-  Criação de norths (publicações) com texto e imagens
+-  Sistema de curtidas em publicações
+-  Memories com fotos e legendas
+-  Criação e gerenciamento de grupos
+-  Guestbook para recados e respostas
+-  Personalização da capa do portal
+-  Ícones de perfil personalizáveis
+-  Área de configurações da conta
+-  Exportação dos dados do usuário em JSON
 
 Algumas funcionalidades ainda estão em desenvolvimento, incluindo a expansão da integração com o Supabase, North.fm, playlist, Explore, Signals e Minha Estante.
 
