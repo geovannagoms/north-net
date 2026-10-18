@@ -61,3 +61,33 @@ Algumas funcionalidades ainda estão em desenvolvimento, incluindo a expansão d
 <p align="center">
   <img src="docs/images/grupo.png" alt="Página de grupo do North.net" width="700">
 </p>
+
+## Como executar
+
+1. Clone este repositório:
+
+   ```bash
+   git clone https://github.com/geovannagoms/north-net.git
+
+   ## Status do projeto
+
+🚧 **Em desenvolvimento**
+
+O North.net está em desenvolvimento ativo. A autenticação de usuários com Supabase já está funcional, enquanto outras partes da aplicação ainda utilizam armazenamento local e estão sendo gradualmente integradas ao backend.
+
+A interface, as funcionalidades e a estrutura do código também continuam sendo aprimoradas conforme o projeto evolui.
+
+## Próximos passos
+
+- Expandir a integração dos dados com o Supabase
+- Desenvolver o North.fm e o sistema de playlist
+- Implementar Explore e Signals
+- Expandir a área Minha Estante
+- Refatorar e organizar partes da estrutura JavaScript
+- Continuar aprimorando responsividade e interface
+
+## Autora
+
+Desenvolvido por **Geovanna Soares Gomes**.
+
+- GitHub: [@geovannagoms](https://github.com/geovannagoms)
