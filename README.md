@@ -69,15 +69,19 @@ Algumas funcionalidades ainda estão em desenvolvimento, incluindo a expansão d
    ```bash
    git clone https://github.com/geovannagoms/north-net.git
 
-   ## Status do projeto
+  ## Status do projeto
 
-🚧 **Em desenvolvimento**
+ **Temporariamente pausado**
 
-O North.net está em desenvolvimento ativo. A autenticação de usuários com Supabase já está funcional, enquanto outras partes da aplicação ainda utilizam armazenamento local e estão sendo gradualmente integradas ao backend.
+O desenvolvimento do North.net está temporariamente pausado enquanto aprofundo minha formação técnica em desenvolvimento web e outras áreas da tecnologia.
 
-A interface, as funcionalidades e a estrutura do código também continuam sendo aprimoradas conforme o projeto evolui.
+A decisão de pausar o projeto busca permitir que futuras implementações sejam feitas com maior autonomia, compreensão técnica e melhor estruturação do código.
+
+O projeto será retomado após essa etapa de estudos.
 
 ## Próximos passos
+
+Quando o desenvolvimento for retomado:
 
 - Expandir a integração dos dados com o Supabase
 - Desenvolver o North.fm e o sistema de playlist
